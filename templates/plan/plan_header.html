@@ -1,0 +1,61 @@
+<!-- plan/plan_header.html -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="text-primary fw-bold mb-1">Plan de voyage: {{ contenu.destination }}</h2>
+        <p class="text-muted">
+            Créé le {{ plan.created_at.strftime("%d/%m/%Y à %H:%M") }} 
+            | Statut: <span class="badge bg-success">Prêt</span>
+            {% if contenu.generation_time %}
+            | Généré en {{ "%.2f"|format(contenu.generation_time) }}s
+            {% endif %}
+           
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <!-- Bouton Export PDF -->
+        <!-- Ligne 16, changer : -->
+<a href="{{ url_for('exporter_pdf', plan_id=plan.id) }}" class="btn btn-primary">
+            <i class="fas fa-file-pdf me-2"></i>Export PDF
+        </a>
+        <!-- Bouton Supprimer -->
+        <button onclick="deletePlan({{ plan.id }})" class="btn btn-danger">
+            <i class="fas fa-trash me-2"></i>Supprimer
+        </button>
+    </div>
+</div>
+
+<!-- Carte de résumé rapide -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2 border-end">
+                        <h5 class="text-primary mb-1">{{ contenu.origin }}</h5>
+                        <small class="text-muted">Origine</small>
+                    </div>
+                    <div class="col-md-2 border-end">
+                        <h5 class="text-success mb-1">{{ contenu.destination }}</h5>
+                        <small class="text-muted">Destination</small>
+                    </div>
+                    <div class="col-md-2 border-end">
+                        <h5 class="text-info mb-1">{{ contenu.depart_date }}</h5>
+                        <small class="text-muted">Départ</small>
+                    </div>
+                    <div class="col-md-2 border-end">
+                        <h5 class="text-info mb-1">{{ contenu.return_date }}</h5>
+                        <small class="text-muted">Retour</small>
+                    </div>
+                    <div class="col-md-2 border-end">
+                        <h5 class="text-warning mb-1">{{ contenu.estimated_budget.total if contenu.estimated_budget is mapping else contenu.estimated_budget }} €</h5>
+                        <small class="text-muted">Budget total</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h5 class="text-secondary mb-1">{{ contenu.duration_days }} jours</h5>
+                        <small class="text-muted">Durée</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

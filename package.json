@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "statistics": "^3.3.0"
+  }
+}

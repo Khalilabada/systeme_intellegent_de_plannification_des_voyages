@@ -1,0 +1,465 @@
+<!-- templates/plan/sections/flights.html - VERSION COMPLÈTE CORRIGÉE -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-light border-bottom">
+        <h5 class="mb-0"><i class="fas fa-plane text-primary me-2"></i>Vols disponibles</h5>
+        <p class="text-muted mb-0 small">
+            {{ contenu.origin }} → {{ contenu.destination }}
+            <span class="mx-2">•</span>
+            {% if contenu.depart_date %}
+                {% if contenu.depart_date|length == 10 and contenu.depart_date[4] == '-' and contenu.depart_date[7] == '-' %}
+                    {{ contenu.depart_date[8:10] }}/{{ contenu.depart_date[5:7] }}
+                {% else %}
+                    {{ contenu.depart_date }}
+                {% endif %}
+            {% endif %}
+            {% if contenu.return_date %}
+                → 
+                {% if contenu.return_date|length == 10 and contenu.return_date[4] == '-' and contenu.return_date[7] == '-' %}
+                    {{ contenu.return_date[8:10] }}/{{ contenu.return_date[5:7] }}
+                {% else %}
+                    {{ contenu.return_date }}
+                {% endif %}
+            {% endif %}
+        </p>
+    </div>
+    
+    <div class="card-body p-3">
+        {% if contenu.flights and contenu.flights|length > 0 %}
+            <div class="row g-3">
+                {% for flight in contenu.flights %}
+                <div class="col-md-6">
+                    <div class="card h-100 border {% if flight.metadata and flight.metadata.is_return %}border-info{% else %}border-primary{% endif %} hover-shadow">
+                        <div class="card-header bg-white pb-2">
+                            <div class="d-flex align-items-center">
+                                <!-- Logo de la compagnie -->
+                                <div class="me-3">
+                                    {% if flight.metadata and flight.metadata.airline_logo %}
+                                        <img src="{{ flight.metadata.airline_logo }}"
+                                             class="rounded-circle"
+                                             width="40"
+                                             height="40"
+                                             alt="{{ flight.airline }}"
+                                             onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/initials/svg?seed={{ flight.airline|urlencode }}&backgroundColor=002157&textColor=ffffff';">
+                                    {% else %}
+                                        <!-- Image de secours avec les initiales -->
+                                        <img src="https://api.dicebear.com/7.x/initials/svg?seed={{ flight.airline|urlencode if flight.airline else 'AFR' }}&backgroundColor=002157&textColor=ffffff"
+                                             class="rounded-circle"
+                                             width="40"
+                                             height="40"
+                                             alt="{{ flight.airline if flight.airline else 'Airline' }}">
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0 fw-bold">{{ flight.airline if flight.airline else 'Compagnie' }}</h6>
+                                    <small class="text-muted">
+                                        {% if flight.airline_code %}{{ flight.airline_code }}{% endif %}
+                                        {% if flight.flight_number %}{{ flight.flight_number }}{% endif %}
+                                    </small>
+                                </div>
+                                
+                                <div class="text-end">
+                                    <div class="h5 fw-bold text-success mb-0">
+                                        {% if flight.price and flight.price.total %}
+                                            {{ flight.price.total|round(2) if flight.price.total is number else flight.price.total }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                        <small class="fs-6">
+                                            {% if flight.price and flight.price.currency %}
+                                                {{ flight.price.currency }}
+                                            {% else %}
+                                                €
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+
+                        <div class="card-body py-3">
+                            
+                            <div class="flight-timeline mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <!-- Départ -->
+                                    <div class="text-center">
+                                        
+                                        <div class="fw-bold fs-5 text-primary">
+                                            {{ flight.departure.time if flight.departure and flight.departure.time else '--:--' }}
+                                        </div>
+                                        <div class="text-primary small">
+                                            {{ flight.departure.airport if flight.departure and flight.departure.airport else flight.departure.city if flight.departure else 'N/A' }}
+                                        </div>
+                                        <div class="text-muted small">
+                                            {{ flight.departure.city if flight.departure and flight.departure.city else contenu.origin if contenu.origin else 'N/A' }}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Durée -->
+                                    <div class="text-center mx-3">
+                                        <div class="position-relative">
+                                            <div class="border-top border-2 border-dashed" style="width: 80px;"></div>
+                                            <i class="fas fa-plane position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted"></i>
+                                        </div>
+                                        <div class="mt-2">
+                                            <span class="badge bg-light text-dark">
+                                                {{ flight.duration if flight.duration else '--:--' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Arrivée -->
+                                    <div class="text-center">
+                                        
+                                        <div class="fw-bold fs-5 text-success">
+                                            {{ flight.arrival.time if flight.arrival and flight.arrival.time else '--:--' }}
+                                        </div>
+                                        <div class="text-primary small">
+                                            {{ flight.arrival.airport if flight.arrival and flight.arrival.airport else flight.arrival.city if flight.arrival else 'N/A' }}
+                                        </div>
+                                        <div class="text-muted small">
+                                            {{ flight.arrival.city if flight.arrival and flight.arrival.city else contenu.destination if contenu.destination else 'N/A' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Détails -->
+                            <div class="row g-2 mt-3">
+                                <div class="col-6">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">
+                                            {% if flight.stops == 0 %}
+                                                <i class="fas fa-check-circle text-success"></i>
+                                            {% elif flight.stops %}
+                                                <i class="fas fa-exchange-alt text-warning"></i>
+                                            {% else %}
+                                                <i class="fas fa-question-circle text-muted"></i>
+                                            {% endif %}
+                                        </span>
+                                        <div>
+                                            <small class="text-muted">Escales</small>
+                                            <div class="fw-medium">
+                                                {% if flight.stops == 0 %}Direct
+                                                {% elif flight.stops == 1 %}1 escale
+                                                {% elif flight.stops > 1 %}{{ flight.stops }} escales
+                                                {% else %}N/A
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-6">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">
+                                            <i class="fas fa-suitcase text-muted"></i>
+                                        </span>
+                                        <div>
+                                            <small class="text-muted">Bagages</small>
+                                            <div class="fw-medium small">
+                                                {{ flight.baggage_allowance if flight.baggage_allowance else 'Non spécifié' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-6">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">
+                                            <i class="fas fa-chair text-muted"></i>
+                                        </span>
+                                        <div>
+                                            <small class="text-muted">Classe</small>
+                                            <div class="fw-medium small text-capitalize">
+                                                {{ flight.class if flight.class else 'Économique' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-6">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">
+                                            {% if flight.metadata and flight.metadata.is_return %}
+                                                <span class="badge bg-info">Retour</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">Aller</span>
+                                            {% endif %}
+                                        </span>
+                                        <div class="ms-2">
+                                            <small class="text-muted">Type</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="card-footer bg-white border-top pt-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    {% if flight.dates %}
+                                        {% if flight.dates.label_date == "Retour" %}
+                                            <span class="text-info">
+                                                <i class="fas fa-plane-arrival me-1"></i>
+                                                Retour le: 
+                                                {% if flight.dates.date_vol|length == 10 and flight.dates.date_vol[4] == '-' and flight.dates.date_vol[7] == '-' %}
+                                                    {{ flight.dates.date_vol[8:10] }}/{{ flight.dates.date_vol[5:7] }}/{{ flight.dates.date_vol[0:4] }}
+                                                {% else %}
+                                                    {{ flight.dates.date_vol }}
+                                                {% endif %}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-primary">
+                                                <i class="fas fa-plane-departure me-1"></i>
+                                                Départ le: 
+                                                {% if flight.dates.date_vol|length == 10 and flight.dates.date_vol[4] == '-' and flight.dates.date_vol[7] == '-' %}
+                                                    {{ flight.dates.date_vol[8:10] }}/{{ flight.dates.date_vol[5:7] }}/{{ flight.dates.date_vol[0:4] }}
+                                                {% else %}
+                                                    {{ flight.dates.date_vol }}
+                                                {% endif %}
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-secondary">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            Date non disponible
+                                        </span>
+                                    {% endif %}
+                                </small>
+                                
+                                {% if flight.booking_link and flight.booking_link != '' %}
+                                <a href="{{ flight.booking_link }}" 
+                                   class="btn btn-sm btn-primary" 
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    <i class="fas fa-shopping-cart me-1"></i>Réserver
+                                </a>
+                                {% else %}
+                                <span class="btn btn-sm btn-secondary disabled">
+                                    <i class="fas fa-info-circle me-1"></i>Indisponible
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            
+            <div class="mt-4 pt-3 border-top">
+                <h6 class="mb-3"><i class="fas fa-chart-bar text-primary me-2"></i>Statistiques</h6>
+                <div class="row g-2">
+                    {% set depart_flights = [] %}
+                    {% set return_flights = [] %}
+                    {% set direct_flights = [] %}
+                    {% set total_price_sum = 0 %}
+                    {% set price_count = 0 %}
+                    
+                    {% for flight in contenu.flights %}
+                        {% if flight.metadata and flight.metadata.is_return %}
+                            {% if return_flights.append(flight) %}{% endif %}
+                        {% else %}
+                            {% if depart_flights.append(flight) %}{% endif %}
+                        {% endif %}
+                        {% if flight.stops == 0 %}
+                            {% if direct_flights.append(flight) %}{% endif %}
+                        {% endif %}
+                        
+                        {% if flight.price and flight.price.total %}
+                            {% if flight.price.total is number %}
+                                {% set total_price_sum = total_price_sum + flight.price.total %}
+                                {% set price_count = price_count + 1 %}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 text-center">
+                            <div class="fw-bold text-primary">{{ depart_flights|length }}</div>
+                            <small class="text-muted">Vols aller</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 text-center">
+                            <div class="fw-bold text-info">{{ return_flights|length }}</div>
+                            <small class="text-muted">Vols retour</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 text-center">
+                            <div class="fw-bold text-success">{{ direct_flights|length }}</div>
+                            <small class="text-muted">Directs</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 text-center">
+                            {% set avg_price = (total_price_sum / price_count)|round(0) if price_count > 0 else 0 %}
+                            <div class="fw-bold text-warning">
+                                {{ avg_price }}€
+                            </div>
+                            <small class="text-muted">Prix moyen</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        {% else %}
+            <!-- État vide -->
+            <div class="text-center py-5">
+                <i class="fas fa-plane-slash fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aucun vol disponible</h5>
+                <p class="text-muted">Essayer avec d'autres dates ou destinations</p>
+                {% if contenu.origin and contenu.destination %}
+                <p class="small text-muted">
+                    Recherche : {{ contenu.origin }} → {{ contenu.destination }}
+                    (Départ: 
+                    {% if contenu.depart_date %}
+                        {% if contenu.depart_date|length == 10 and contenu.depart_date[4] == '-' and contenu.depart_date[7] == '-' %}
+                            {{ contenu.depart_date[8:10] }}/{{ contenu.depart_date[5:7] }}/{{ contenu.depart_date[0:4] }}
+                        {% else %}
+                            {{ contenu.depart_date }}
+                        {% endif %}
+                    {% else %}
+                        Date N/A
+                    {% endif %}
+                    {% if contenu.return_date %}
+                        → Retour: 
+                        {% if contenu.return_date|length == 10 and contenu.return_date[4] == '-' and contenu.return_date[7] == '-' %}
+                            {{ contenu.return_date[8:10] }}/{{ contenu.return_date[5:7] }}/{{ contenu.return_date[0:4] }}
+                        {% else %}
+                            {{ contenu.return_date }}
+                        {% endif %}
+                    {% endif %})
+                </p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.hover-shadow:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+
+.border-dashed {
+    border-style: dashed !important;
+}
+
+/* Animation pour la timeline */
+.flight-timeline .position-relative .border-top {
+    position: relative;
+    width: 80px;
+    margin: 0 auto;
+}
+
+.flight-timeline .fa-plane {
+    color: var(--bs-primary);
+    font-size: 1.2rem;
+}
+
+/* Styles pour les dates */
+.card-footer .text-muted {
+    font-size: 0.85rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .col-md-6 {
+        width: 100%;
+    }
+    
+    .flight-timeline .d-flex {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .flight-timeline .mx-3 {
+        margin: 10px 0 !important;
+    }
+    
+    .flight-timeline .position-relative .border-top {
+        width: 100%;
+    }
+    
+    /* Ajuster les badges */
+    .badge {
+        font-size: 0.7em;
+        padding: 0.25em 0.5em;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.col-md-6 {
+    animation: fadeIn 0.3s ease-out;
+    animation-fill-mode: both;
+}
+
+/* Retarder l'animation pour chaque carte */
+.col-md-6:nth-child(1) { animation-delay: 0.1s; }
+.col-md-6:nth-child(2) { animation-delay: 0.2s; }
+.col-md-6:nth-child(3) { animation-delay: 0.3s; }
+.col-md-6:nth-child(4) { animation-delay: 0.4s; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Ajouter des interactions pour les cartes de vol
+    const flightCards = document.querySelectorAll('.hover-shadow');
+    
+    flightCards.forEach((card, index) => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.zIndex = '10';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.zIndex = '1';
+        });
+        
+        // Animation au clic
+        card.addEventListener('click', function(e) {
+            if (!e.target.closest('a')) { // Ne pas déclencher si on clique sur un lien
+                this.classList.toggle('border-dark');
+            }
+        });
+    });
+    
+    // Gestion des liens de réservation avec analytics
+    const bookingButtons = document.querySelectorAll('a[href*="booking"], a[href*="travel"]');
+    bookingButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const flightCard = this.closest('.card');
+            const airline = flightCard.querySelector('.fw-bold')?.textContent || 'Unknown';
+            const price = flightCard.querySelector('.text-success')?.textContent || 'Unknown';
+            const dateInfo = flightCard.querySelector('.card-footer .text-muted')?.textContent || 'Unknown';
+            
+            console.log('Réservation vol:', {
+                airline: airline.trim(),
+                price: price.trim(),
+                date: dateInfo.trim(),
+                timestamp: new Date().toISOString()
+            });
+        });
+    });
+    
+    // Amélioration de l'expérience sur mobile
+    if (window.innerWidth < 768) {
+        flightCards.forEach(card => {
+            card.style.cursor = 'pointer';
+        });
+    }
+});
+</script>

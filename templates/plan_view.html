@@ -1,0 +1,58 @@
+<!-- templates/plan/view_plan.html -->
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    {% include "plan/plan_header.html" %}
+    {% include "plan/plan_navigation.html" %}
+    
+    <div class="tab-content mt-4">
+        <div class="tab-pane fade show active" id="summary">
+            {% include "plan/sections/summary.html" %}
+        </div>
+        
+        <div class="tab-pane fade" id="itinerary">
+            {% include "plan/sections/itinerary.html" %}
+        </div>
+        
+        <div class="tab-pane fade" id="flights">
+            {% include "plan/sections/flights.html" %}
+        </div>
+        
+        <div class="tab-pane fade" id="hotels">
+            {% include "plan/sections/hotels.html" %}
+        </div>
+        
+        <div class="tab-pane fade" id="restaurants">
+            {% include "plan/sections/restaurants.html" %}
+        </div>
+        
+        <div class="tab-pane fade" id="weather">
+            {% include "plan/sections/weather.html" %}
+        </div>
+        
+        <div class="tab-pane fade" id="activities">
+            {% include "plan/sections/activities.html" %}
+        </div>
+        
+        <div class="tab-pane fade" id="budget">
+            {% include "plan/sections/budget.html" %}
+        </div>
+        
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Variables globales pour le JavaScript
+    window.currentPlanId = {{ plan.id }};
+    window.dashboardUrl = "{{ url_for('dashboard') }}";
+</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block title %}Inscription{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+    }
+    
+    .register-container {
+        max-width: 450px;
+        margin: 0 auto;
+        padding-top: 2rem;
+    }
+    
+    .register-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        background: white;
+    }
+    
+    /* MÊME GRADIENT QUE LOGIN */
+    .register-header {
+        background: linear-gradient(to right, var(--primary-color), var(--purple-color));
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .register-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .register-body {
+        padding: 2rem;
+    }
+    
+    .form-control {
+        padding: 0.75rem 1rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 1.25rem;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .password-group {
+        position: relative;
+        margin-bottom: 1.25rem;
+    }
+    
+    .password-toggle {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        z-index: 5;
+    }
+    
+    /* MÊME BOUTON QUE LOGIN */
+    .register-btn {
+        background: linear-gradient(to right, var(--primary-color), var(--purple-color));
+        border: none;
+        padding: 0.75rem;
+        font-weight: 600;
+        color: white;
+        border-radius: 8px;
+        transition: all 0.3s;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .register-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+        color: white;
+    }
+    
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 1.5rem 0;
+        color: #6c757d;
+    }
+    
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .divider span {
+        padding: 0 1rem;
+    }
+    
+    /* MÊME COULEUR DE LIENS QUE LOGIN */
+    .login-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .login-link:hover {
+        color: var(--purple-color);
+        text-decoration: underline;
+    }
+    
+    .terms-check {
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    @media (max-width: 576px) {
+        .register-container {
+            padding: 1rem;
+        }
+        
+        .register-header,
+        .register-body {
+            padding: 1.5rem;
+        }
+    }
+    
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: -0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .password-hint {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: -0.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="register-card">
+        <div class="register-header">
+            <div class="register-icon">
+                <i class="bi bi-person-plus"></i>
+            </div>
+            <h3>Créer un compte</h3>
+            <p class="mb-0">Rejoignez Safer fi dark dès maintenant</p>
+        </div>
+        
+        <div class="register-body">
+            <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm">
+                {% if form and form.hidden_tag %}
+                    {{ form.hidden_tag() }}
+                {% endif %}
+                
+                <input type="text" 
+                       class="form-control" 
+                       id="nom" 
+                       name="nom" 
+                       placeholder="Nom d'utilisateur" 
+                       required
+                       value="{{ request.form.nom if request.form }}"
+                       autocomplete="username">
+                
+                {% if form and form.nom.errors %}
+                    {% for error in form.nom.errors %}
+                        <div class="error-message">
+                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <input type="email" 
+                       class="form-control" 
+                       id="email" 
+                       name="email" 
+                       placeholder="Adresse email" 
+                       required
+                       value="{{ request.form.email if request.form }}"
+                       autocomplete="email">
+                
+                {% if form and form.email.errors %}
+                    {% for error in form.email.errors %}
+                        <div class="error-message">
+                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <div class="password-group">
+                    <input type="password" 
+                           class="form-control" 
+                           id="password" 
+                           name="password" 
+                           placeholder="Mot de passe" 
+                           required
+                           autocomplete="new-password">
+                    <button type="button" 
+                            class="password-toggle" 
+                            onclick="togglePassword('password')">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                
+                <div class="password-hint">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Minimum 8 caractères recommandé
+                </div>
+                
+                {% if form and form.password.errors %}
+                    {% for error in form.password.errors %}
+                        <div class="error-message">
+                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <div class="password-group">
+                    <input type="password" 
+                           class="form-control" 
+                           id="confirmPassword" 
+                           name="confirm_password" 
+                           placeholder="Confirmer le mot de passe" 
+                           required
+                           autocomplete="new-password">
+                    <button type="button" 
+                            class="password-toggle" 
+                            onclick="togglePassword('confirmPassword')">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                
+                <div class="error-message" id="passwordMatchError"></div>
+                
+                <div class="terms-check">
+                    <div class="form-check">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               id="terms" 
+                               name="terms" 
+                               required>
+                        <label class="form-check-label small" for="terms">
+                            J'accepte les 
+                            <a href="#" class="login-link">conditions d'utilisation</a> 
+                            et la 
+                            <a href="#" class="login-link">politique de confidentialité</a>
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn register-btn" id="submitBtn">
+                    <i class="bi bi-person-plus me-2"></i>
+                    Créer mon compte
+                </button>
+                
+                <div class="divider">
+                    <span>Déjà membre ?</span>
+                </div>
+                
+                <div class="text-center">
+                    <p class="mb-0">
+                        Vous avez déjà un compte ?
+                        <a href="{{ url_for('auth.login') }}" class="login-link">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>
+                            Connectez-vous ici
+                        </a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Messages d'erreur généraux -->
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Fonction pour basculer l'affichage du mot de passe
+    function togglePassword(fieldId) {
+        const input = document.getElementById(fieldId);
+        const toggleButton = event.currentTarget;
+        const icon = toggleButton.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    }
+    
+    // Vérification de la correspondance des mots de passe
+    function checkPasswordMatch() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const errorElement = document.getElementById('passwordMatchError');
+        
+        if (confirmPassword === '') {
+            errorElement.textContent = '';
+            return;
+        }
+        
+        if (password !== confirmPassword) {
+            errorElement.innerHTML = '<i class="bi bi-x-circle me-1"></i>Les mots de passe ne correspondent pas';
+        } else {
+            errorElement.textContent = '';
+        }
+    }
+    
+    // Écouter les changements dans les champs de mot de passe
+    document.getElementById('password').addEventListener('input', checkPasswordMatch);
+    document.getElementById('confirmPassword').addEventListener('input', checkPasswordMatch);
+    
+    // Validation du formulaire
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        const nom = document.getElementById('nom').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const terms = document.getElementById('terms').checked;
+        
+        // Validation du nom d'utilisateur
+        if (nom.length < 3) {
+            e.preventDefault();
+            alert('Le nom d\'utilisateur doit contenir au moins 3 caractères.');
+            return false;
+        }
+        
+        // Validation de l'email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            e.preventDefault();
+            alert('Veuillez entrer une adresse email valide.');
+            return false;
+        }
+        
+        // Validation du mot de passe
+        if (password.length < 6) {
+            e.preventDefault();
+            alert('Le mot de passe doit contenir au moins 6 caractères.');
+            return false;
+        }
+        
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            alert('Les mots de passe ne correspondent pas.');
+            return false;
+        }
+        
+        // Validation des conditions
+        if (!terms) {
+            e.preventDefault();
+            alert('Veuillez accepter les conditions d\'utilisation.');
+            return false;
+        }
+        
+        return true;
+    });
+    
+    // Focus sur le premier champ au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+        const nomInput = document.getElementById('nom');
+        if (nomInput && !nomInput.value) {
+            nomInput.focus();
+        }
+    });
+</script>
+{% endblock %}

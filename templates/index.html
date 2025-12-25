@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Safer fi dark - Voyagez dans le monde{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+  <!-- Logo avec avion -->
+  <div class="mb-4">
+    <div class="d-flex justify-content-center align-items-center mb-3">
+      <div class="bg-primary rounded-circle p-3 me-3 shadow">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="white" class="bi bi-airplane" viewBox="0 0 16 16">
+          <path d="M6.428 1.151C6.708.591 7.213 0 8 0s1.292.592 1.572 1.151C9.861 1.73 10 2.431 10 3v3.691l5.17 2.585a1.5 1.5 0 0 1 .83 1.342V12a.5.5 0 0 1-.582.493l-5.507-.918-.375 2.253 1.318 1.318A.5.5 0 0 1 10.5 16h-5a.5.5 0 0 1-.354-.854l1.319-1.318-.376-2.253-5.507.918A.5.5 0 0 1 0 12v-1.382a1.5 1.5 0 0 1 .83-1.342L6 6.691V3c0-.568.14-1.271.428-1.849Z"/>
+        </svg>
+      </div>
+      <h1 class="display-4 mb-0">سافر في دارك</h1>
+    </div>
+    <h2 class="mb-4" style="color: #005293; font-weight: 700;">Safer fi dark</h2>
+  </div>
+  
+  <p class="lead mb-4">Voyagez dans le monde avec une  clic</p>
+  
+  {% if current_user.is_authenticated %}
+  <div class="mt-4">
+    <a class="btn btn-primary btn-lg px-4" href="{{ url_for('dashboard') }}">
+      <i class="bi bi-speedometer2 me-2"></i>Accéder au Dashboard
+    </a>
+  </div>
+  {% else %}
+  <div class="mt-4">
+    <a class="btn btn-primary btn-lg me-3 px-4" href="{{ url_for('auth.login') }}">
+      <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
+    </a>
+    <a class="btn btn-outline-primary btn-lg px-4" href="{{ url_for('auth.register') }}">
+      <i class="bi bi-person-plus me-2"></i>Créer un compte
+    </a>
+  </div>
+  <p class="mt-3 text-muted">Commencez à planifier vos voyages gratuitement</p>
+  {% endif %}
+</div>
+
+<div class="row mt-5">
+  <div class="col-md-4 mb-4">
+    <div class="card h-100 border-0 shadow-sm hover-lift">
+      <div class="card-body text-center p-4">
+        <div class="mb-3">
+          <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3">
+            <i class="bi bi-globe-americas fs-3 text-primary"></i>
+          </div>
+        </div>
+        <h5 class="card-title fw-bold">🌍 Monde entier</h5>
+        <p class="card-text">Planifiez vos voyages partout dans le monde.</p>
+        <small class="text-muted">Paris, Istanbul, Dubai, Tokyo...</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-4">
+    <div class="card h-100 border-0 shadow-sm hover-lift">
+      <div class="card-body text-center p-4">
+        <div class="mb-3">
+          <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex p-3">
+            <i class="bi bi-cpu fs-3 text-danger"></i>
+          </div>
+        </div>
+        <h5 class="card-title fw-bold">🤖 IA tunisienne</h5>
+        <p class="card-text">Recommandations adaptées aux voyageurs tunisiens.</p>
+        <small class="text-muted">Comprend vos besoins spécifiques</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-4">
+    <div class="card h-100 border-0 shadow-sm hover-lift">
+      <div class="card-body text-center p-4">
+        <div class="mb-3">
+          <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3">
+            <i class="bi bi-currency-exchange fs-3 text-success"></i>
+          </div>
+        </div>
+        <h5 class="card-title fw-bold">💰 Budget optimisé</h5>
+        <p class="card-text">Conseils en dinar tunisien et visa inclus.</p>
+        <small class="text-muted">Prix en TND + info visas</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section supplémentaire optionnelle - CORRIGÉE -->
+
+{% endblock %}
+
+{% block styles %}
+<style>
+  .hover-lift {
+    transition: transform 0.3s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-5px);
+  }
+  
+  .bg-primary {
+    background-color: #005293 !important;
+  }
+  
+  .btn-primary {
+    background-color: #005293;
+    border-color: #005293;
+  }
+  
+  .btn-primary:hover {
+    background-color: #00407a;
+    border-color: #00407a;
+  }
+  
+  .btn-outline-primary {
+    color: #005293;
+    border-color: #005293;
+  }
+  
+  .btn-outline-primary:hover {
+    background-color: #005293;
+    border-color: #005293;
+  }
+</style>
+{% endblock %}

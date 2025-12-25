@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+    }
+    
+    .login-container {
+        max-width: 450px;
+        margin: 0 auto;
+        padding-top: 2rem;
+    }
+    
+    .login-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        background: white;
+    }
+    
+    .login-header {
+        background: linear-gradient(to right, var(--primary-color), var(--purple-color));
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .login-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .login-body {
+        padding: 2rem;
+    }
+    
+    .form-control {
+        padding: 0.75rem 1rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .login-btn {
+        background: linear-gradient(to right, var(--primary-color), var(--purple-color));
+        border: none;
+        padding: 0.75rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+    
+    .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+    }
+    
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 1.5rem 0;
+        color: #6c757d;
+    }
+    
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .divider span {
+        padding: 0 1rem;
+    }
+    
+    .register-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .register-link:hover {
+        text-decoration: underline;
+    }
+    
+    .password-toggle {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+    }
+    
+    .input-group {
+        position: relative;
+    }
+    
+    @media (max-width: 576px) {
+        .login-container {
+            padding: 1rem;
+        }
+        
+        .login-body {
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-icon">
+                <i class="bi bi-person-circle"></i>
+            </div>
+            <h3>Connexion</h3>
+            <p class="mb-0">Bienvenue sur Safer fi dark</p>
+        </div>
+        
+        <div class="login-body">
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                {{ form.hidden_tag() if form }}
+                
+                <div class="mb-3">
+                    <label for="email" class="form-label">
+                        <i class="bi bi-envelope me-1"></i>Adresse email
+                    </label>
+                    <input type="email" 
+                           class="form-control" 
+                           id="email" 
+                           name="email" 
+                           placeholder="votre@email.com" 
+                           required
+                           value="{{ email if email }}">
+                    {% if form and form.email.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.email.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label for="password" class="form-label">
+                        <i class="bi bi-lock me-1"></i>Mot de passe
+                    </label>
+                    <div class="input-group">
+                        <input type="password" 
+                               class="form-control" 
+                               id="password" 
+                               name="password" 
+                               placeholder="Votre mot de passe" 
+                               required>
+                        <button type="button" 
+                                class="password-toggle" 
+                                onclick="togglePassword()">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    {% if form and form.password.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.password.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-end mt-2">
+                        <a href="#" class="small text-decoration-none">
+                            Mot de passe oublié ?
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-primary-custom login-btn">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                        Se connecter
+                    </button>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" 
+                           type="checkbox" 
+                           id="remember" 
+                           name="remember">
+                    <label class="form-check-label small" for="remember">
+                        Se souvenir de moi
+                    </label>
+                </div>
+                
+                <div class="divider">
+                    <span>Ou</span>
+                </div>
+                
+                <div class="text-center">
+                    <p class="mb-3">
+                        Vous n'avez pas de compte ?
+                        <a href="{{ url_for('auth.register') }}" class="register-link">
+                            Inscrivez-vous ici
+                        </a>
+                    </p>
+                    
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Retour à l'accueil
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Messages d'erreur spécifiques -->
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const toggleButton = event.currentTarget;
+        const icon = toggleButton.querySelector('i');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    }
+    
+    // Focus sur le champ email au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+        const emailInput = document.getElementById('email');
+        if (emailInput && !emailInput.value) {
+            emailInput.focus();
+        }
+    });
+    
+    // Validation du formulaire
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        if (!email || !password) {
+            e.preventDefault();
+            alert('Veuillez remplir tous les champs obligatoires.');
+            return false;
+        }
+        
+        // Validation basique de l'email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            e.preventDefault();
+            alert('Veuillez entrer une adresse email valide.');
+            return false;
+        }
+        
+        return true;
+    });
+</script>
+{% endblock %}

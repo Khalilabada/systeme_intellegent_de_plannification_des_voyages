@@ -1,0 +1,550 @@
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-utensils me-2"></i>Restaurants recommandés</h5>
+        <span class="badge bg-light text-danger">{{ contenu.restaurants|length }} restaurants trouvés</span>
+    </div>
+    
+    <div class="card-body">
+        {% if contenu.restaurants %}
+            <div class="row g-4">
+                {% for resto in contenu.restaurants %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 restaurant-card" style="transition: transform 0.3s;">
+                        <!-- Photo du restaurant -->
+                        <div class="position-relative">
+                            {% if resto.photo %}
+                            <img src="{{ resto.photo }}" 
+                                 class="card-img-top restaurant-image" 
+                                 alt="{{ resto.name }}">
+                            {% else %}
+                            <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&h=600&q=80" 
+                                 class="card-img-top restaurant-image" 
+                                 alt="{{ resto.name }}">
+                            {% endif %}
+                            
+                            <!-- Badge type de cuisine -->
+                            {% if resto.cuisine %}
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <span class="badge bg-danger bg-opacity-90">
+                                    <small>
+                                        {% if resto.cuisine is iterable and resto.cuisine|length > 0 %}
+                                            {{ resto.cuisine[0] }}
+                                        {% else %}
+                                            {{ resto.cuisine }}
+                                        {% endif %}
+                                    </small>
+                                </span>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Badge rating -->
+                            {% if resto.rating %}
+                            <div class="position-absolute bottom-0 start-0 m-2">
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-star me-1"></i>
+                                    {{ resto.rating }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-body d-flex flex-column">
+                            <!-- Nom du restaurant -->
+                            <h6 class="card-title fw-bold text-danger mb-2">{{ resto.name }}</h6>
+                            
+                            <!-- Rating et avis -->
+                            <div class="d-flex align-items-center mb-3">
+                                {% if resto.rating %}
+                                <div class="me-3">
+                                    <span class="badge bg-warning text-dark p-2">
+                                        <i class="fas fa-star me-1"></i>
+                                        <strong>{{ resto.rating }}</strong>/5
+                                    </span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if resto.reviews %}
+                                <div>
+                                    <span class="text-muted small">
+                                        <i class="fas fa-comment me-1"></i>
+                                        {{ resto.reviews }} avis
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Adresse -->
+                            {% if resto.address %}
+                            <div class="mb-3">
+                                <p class="card-text small text-muted mb-1">
+                                    <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                                    Adresse
+                                </p>
+                                <p class="card-text small mb-0">{{ resto.address|truncate(40) }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Type de cuisine -->
+                            {% if resto.cuisine and resto.cuisine|length > 1 %}
+                            <div class="mb-3">
+                                <p class="card-text small text-muted mb-1">
+                                    <i class="fas fa-utensils text-warning me-1"></i>
+                                    Spécialités
+                                </p>
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for cuisine_item in resto.cuisine[:3] %}
+                                    <span class="badge bg-light text-dark border">{{ cuisine_item }}</span>
+                                    {% endfor %}
+                                    {% if resto.cuisine|length > 3 %}
+                                    <span class="badge bg-light text-dark border">+{{ resto.cuisine|length - 3 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Horaires -->
+                            {% if resto.hours %}
+                            <div class="mb-3">
+                                <p class="card-text small text-muted mb-1">
+                                    <i class="fas fa-clock text-info me-1"></i>
+                                    Horaires
+                                </p>
+                                <p class="card-text small mb-0">{{ resto.hours|truncate(30) }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Prix et boutons -->
+                            <div class="mt-auto">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {% if resto.price %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="text-muted small me-2">Prix moyen :</span>
+                                            <h6 class="text-danger mb-0">
+                                                {% for i in range(resto.price|length) %}
+                                                    <i class="fas fa-euro-sign small"></i>
+                                                {% endfor %}
+                                                <span class="small ms-1">/personne</span>
+                                            </h6>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Boutons d'action -->
+                                    <div>
+                                        {% if resto.website %}
+                                        <a href="{{ resto.website }}" 
+                                           target="_blank" 
+                                           class="btn btn-sm btn-outline-danger" 
+                                           title="Voir le site web">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <button type="button" 
+                                                class="btn btn-sm btn-danger ms-1" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#restaurantModal{{ loop.index }}"
+                                                title="Plus d'informations">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Modal pour plus d'informations -->
+                    <div class="modal fade" id="restaurantModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-utensils me-2"></i>{{ resto.name }}
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            {% if resto.photo %}
+                                            <img src="{{ resto.photo }}" 
+                                                 class="img-fluid rounded mb-3" 
+                                                 alt="{{ resto.name }}" 
+                                                 style="height: 300px; object-fit: cover; width: 100%;">
+                                            {% else %}
+                                            <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&h=600&q=80" 
+                                                 class="img-fluid rounded mb-3" 
+                                                 alt="{{ resto.name }}"
+                                                 style="height: 300px; object-fit: cover; width: 100%;">
+                                            {% endif %}
+                                            
+                                            <!-- Cuisines complètes -->
+                                            {% if resto.cuisine and resto.cuisine|length > 0 %}
+                                            <div class="mt-3">
+                                                <h6 class="text-danger mb-2">
+                                                    <i class="fas fa-tags me-1"></i>Types de cuisine
+                                                </h6>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    {% for cuisine_item in resto.cuisine %}
+                                                    <span class="badge bg-light text-dark border p-2">{{ cuisine_item }}</span>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <!-- Note et avis -->
+                                            {% if resto.rating %}
+                                            <div class="mb-3">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-warning text-dark p-2 rounded me-2">
+                                                        <strong>{{ resto.rating }}</strong>/5
+                                                        <i class="fas fa-star ms-1"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="small text-muted">
+                                                            {% if resto.reviews %}
+                                                            Basé sur {{ resto.reviews }} avis
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <!-- Adresse complète -->
+                                            {% if resto.address %}
+                                            <div class="mb-3">
+                                                <h6 class="text-danger mb-2">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                                    Adresse
+                                                </h6>
+                                                <p class="mb-0">{{ resto.address }}</p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <!-- Téléphone -->
+                                            {% if resto.phone %}
+                                            <div class="mb-3">
+                                                <h6 class="text-danger mb-2">
+                                                    <i class="fas fa-phone me-1"></i>
+                                                    Téléphone
+                                                </h6>
+                                                <p class="mb-0">
+                                                    <a href="tel:{{ resto.phone }}" class="text-decoration-none text-dark">
+                                                        {{ resto.phone }}
+                                                    </a>
+                                                </p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <!-- Horaires complets -->
+                                            {% if resto.hours %}
+                                            <div class="mb-3">
+                                                <h6 class="text-danger mb-2">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    Horaires d'ouverture
+                                                </h6>
+                                                <p class="mb-0">{{ resto.hours }}</p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <!-- Niveau de prix -->
+                                            {% if resto.price %}
+                                            <div class="mb-3">
+                                                <h6 class="text-danger mb-2">
+                                                    <i class="fas fa-euro-sign me-1"></i>
+                                                    Fourchette de prix
+                                                </h6>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="me-3">
+                                                        {% for i in range(resto.price|length) %}
+                                                            <i class="fas fa-euro-sign text-danger"></i>
+                                                        {% endfor %}
+                                                        <small class="text-muted ms-1">({{ resto.price|length }}/5)</small>
+                                                    </div>
+                                                    <span class="small text-muted">
+                                                        Moyenne par personne
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <!-- Description -->
+                                            {% if resto.description %}
+                                            <div class="mb-3">
+                                                <h6 class="text-danger mb-2">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Description
+                                                </h6>
+                                                <p class="mb-0">{{ resto.description }}</p>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Boutons d'action -->
+                                    <div class="mt-4 border-top pt-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                {% if resto.phone %}
+                                                <a href="tel:{{ resto.phone }}" 
+                                                   class="btn btn-outline-success">
+                                                    <i class="fas fa-phone me-1"></i>
+                                                    Appeler pour réserver
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                {% if resto.website %}
+                                                <a href="{{ resto.website }}" 
+                                                   target="_blank" 
+                                                   class="btn btn-danger">
+                                                    <i class="fas fa-external-link-alt me-1"></i>
+                                                    Voir le site web
+                                                </a>
+                                                {% endif %}
+                                                <button type="button" class="btn btn-outline-secondary ms-2" data-bs-dismiss="modal">
+                                                    Fermer
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination si beaucoup de restaurants -->
+            {% if contenu.restaurants|length > 6 %}
+            <div class="mt-4">
+                <nav aria-label="Navigation restaurants">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">Précédent</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">Suivant</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+            
+        {% else %}
+            <!-- État vide -->
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="fas fa-utensils fa-4x text-muted opacity-25"></i>
+                </div>
+                <h5 class="text-muted mb-2">Aucun restaurant disponible</h5>
+                <p class="text-muted small mb-0">
+                    Aucun restaurant n'a été trouvé pour {{ contenu.destination }}.
+                    <br>
+                    Essayez de modifier vos critères de recherche.
+                </p>
+                <button class="btn btn-outline-danger mt-3">
+                    <i class="fas fa-redo me-1"></i>
+                    Réessayer la recherche
+                </button>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Pied de carte avec statistiques -->
+    <div class="card-footer bg-light py-3">
+        <div class="row text-center">
+            <div class="col-md-3 border-end">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="fas fa-star text-warning fa-lg me-2"></i>
+                    <div>
+                        <div class="fw-bold fs-5">4.2</div>
+                        <small class="text-muted">Note moyenne</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 border-end">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="fas fa-euro-sign text-danger fa-lg me-2"></i>
+                    <div>
+                        <div class="fw-bold fs-5">€€</div>
+                        <small class="text-muted">Prix moyen</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 border-end">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="fas fa-utensils text-success fa-lg me-2"></i>
+                    <div>
+                        <div class="fw-bold fs-5">15+</div>
+                        <small class="text-muted">Types de cuisine</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="fas fa-comments text-info fa-lg me-2"></i>
+                    <div>
+                        <div class="fw-bold fs-5">200+</div>
+                        <small class="text-muted">Avis vérifiés</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS supplémentaire -->
+<style>
+    .restaurant-card {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .restaurant-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(220, 53, 69, 0.1) !important;
+        border-color: #dc3545;
+    }
+    
+    .restaurant-image {
+        height: 220px;
+        object-fit: cover;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+        transition: transform 0.3s ease;
+    }
+    
+    .restaurant-card:hover .restaurant-image {
+        transform: scale(1.05);
+    }
+    
+    .card-title {
+        font-size: 1rem;
+        line-height: 1.4;
+        min-height: 40px;
+    }
+    
+    .badge.bg-warning {
+        font-size: 0.85rem;
+    }
+    
+    .badge.bg-danger {
+        font-size: 0.8rem;
+    }
+    
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+    }
+    
+    .modal-header {
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+    
+    /* Animation pour les badges de prix */
+    .fa-euro-sign {
+        transition: transform 0.3s ease;
+    }
+    
+    .restaurant-card:hover .fa-euro-sign {
+        transform: scale(1.2);
+    }
+    
+    /* Style pour les tags de cuisine */
+    .bg-light.text-dark.border {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .bg-light.text-dark.border:hover {
+        background-color: #dc3545 !important;
+        color: white !important;
+        border-color: #dc3545 !important;
+        transform: translateY(-2px);
+    }
+    
+    @media (max-width: 768px) {
+        .restaurant-card {
+            margin-bottom: 1rem;
+        }
+        
+        .card-footer .row {
+            flex-wrap: wrap;
+        }
+        
+        .card-footer .border-end {
+            border-right: none !important;
+            margin-bottom: 1rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .restaurant-image {
+            height: 180px;
+        }
+        
+        .card-footer .col-md-3 {
+            width: 50%;
+            margin-bottom: 1rem;
+        }
+    }
+</style>
+
+<!-- JavaScript pour les interactions -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animation au survol des cartes
+        const restaurantCards = document.querySelectorAll('.restaurant-card');
+        
+        restaurantCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.zIndex = '10';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.zIndex = '1';
+            });
+        });
+        
+        // Gestion du bouton "Réessayer"
+        const retryButton = document.querySelector('.btn-outline-danger');
+        if (retryButton) {
+            retryButton.addEventListener('click', function() {
+                location.reload();
+            });
+        }
+        
+        // Animation pour les étoiles de rating dans les modals
+        const ratingStars = document.querySelectorAll('.fa-star');
+        ratingStars.forEach(star => {
+            star.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.2)';
+                this.style.transition = 'transform 0.2s ease';
+            });
+            
+            star.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+        
+        // Filtre par type de cuisine (exemple)
+        const cuisineTags = document.querySelectorAll('.bg-light.text-dark.border');
+        cuisineTags.forEach(tag => {
+            tag.addEventListener('click', function() {
+                const cuisineType = this.textContent;
+                alert('Filtrer par : ' + cuisineType);
+                // Ici vous pourriez implémenter le filtrage réel
+            });
+        });
+    });
+</script>

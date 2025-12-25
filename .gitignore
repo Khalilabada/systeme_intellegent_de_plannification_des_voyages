@@ -1,0 +1,25 @@
+# Environnements Python
+venv/
+__pycache__/
+*.pyc
+
+# Dossier instance (base de données locale)
+instance/
+
+# Node.js
+node_modules/
+
+# Fichiers sensibles
+.env
+*.env
+secrets.py
+config.py
+
+# IDE
+.vscode/
+.idea/
+
+# Système
+.DS_Store
+Thumbs.db
+*.log

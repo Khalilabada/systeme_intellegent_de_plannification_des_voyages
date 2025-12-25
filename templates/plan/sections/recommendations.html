@@ -1,0 +1,55 @@
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Recommandations personnalisées</h6>
+            </div>
+            <div class="card-body">
+                {% if contenu.recommendations %}
+                    <ul class="list-unstyled">
+                        {% for rec in contenu.recommendations %}
+                        <li class="mb-2">✅ {{ rec }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">Aucune recommandation disponible</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-suitcase me-2"></i>Conseils de packing</h6>
+            </div>
+            <div class="card-body">
+                {% if contenu.packing_tips %}
+                    <ul class="list-unstyled">
+                        {% for tip in contenu.packing_tips %}
+                        <li class="mb-2">🎒 {{ tip }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">Aucun conseil de packing disponible</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i class="fas fa-tips me-2"></i>Conseils de voyage</h6>
+            </div>
+            <div class="card-body">
+                {% if contenu.travel_tips %}
+                    <ul class="list-unstyled">
+                        {% for tip in contenu.travel_tips %}
+                        <li class="mb-2">💡 {{ tip }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">Aucun conseil disponible</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

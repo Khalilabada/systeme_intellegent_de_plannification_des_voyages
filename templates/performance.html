@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Programmation Concurrente</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        h1 { color: #333; }
+        .test-section { margin: 30px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 4px; 
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover { background-color: #0056b3; }
+        .results { 
+            background-color: #f8f9fa; 
+            padding: 15px; 
+            margin: 15px 0; 
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Programmation Concurrente</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Multithreading</h2>
+        <p>Simule la récupération de données API en parallèle avec 5 threads.</p>
+        <button onclick="testThreading()">▶️ Tester Multithreading</button>
+        <div id="threading-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Test Multiprocessing</h2>
+        <p>Génère plusieurs plans de voyage en parallèle avec multiprocessing.</p>
+        <button onclick="testMultiprocessing()">▶️ Tester Multiprocessing</button>
+        <div id="multiprocessing-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Génération Concurrente de Plans</h2>
+        <p>Génère 3 plans de voyage simultanément avec différentes options.</p>
+        <button onclick="generateConcurrentPlans()">▶️ Générer 3 Plans Concurrents</button>
+        <div id="concurrent-plans"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Performances Comparatives</h2>
+        <canvas id="performanceChart" width="800" height="400"></canvas>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. Événements en Temps Réel</h2>
+        <div id="socket-events">
+            <p>Événements Socket.IO :</p>
+            <div id="events-list"></div>
+        </div>
+    </div>
+    
+    <script>
+        const socket = io();
+        let performanceData = [];
+        let eventCount = 0;
+        
+        function testThreading() {
+            const resultsDiv = document.getElementById('threading-results');
+            resultsDiv.innerHTML = '<p class="info">⏳ Test en cours...</p>';
+            
+            fetch('/api/test-threading', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const html = `
+                            <div class="results">
+                                <h3 class="success">✅ Test Multithreading Réussi</h3>
+                                <p><strong>Temps total:</strong> ${data.total_time}s (Séquentiel estimé: ${data.sequential_estimate}s)</p>
+                                <p><strong>Accélération:</strong> x${data.speedup}</p>
+                                <p><strong>Workers utilisés:</strong> ${data.workers}</p>
+                                <h4>Résultats par API:</h4>
+                                <ul>
+                                    ${data.results.map(r => `
+                                        <li>${r.source}: ${r.time}s ${r.error ? `<span class="error">(Erreur: ${r.error})</span>` : ''}</li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        `;
+                        resultsDiv.innerHTML = html;
+                        
+                        // Ajouter aux données du graphique
+                        performanceData.push({
+                            type: 'Multithreading',
+                            time: data.total_time,
+                            speedup: data.speedup
+                        });
+                        updateChart();
+                    } else {
+                        resultsDiv.innerHTML = `<p class="error">❌ Erreur: ${data.error}</p>`;
+                    }
+                })
+                .catch(error => {
+                    resultsDiv.innerHTML = `<p class="error">❌ Erreur réseau: ${error.message}</p>`;
+                });
+        }
+        
+        function testMultiprocessing() {
+            const resultsDiv = document.getElementById('multiprocessing-results');
+            resultsDiv.innerHTML = '<p class="info">⏳ Test en cours...</p>';
+            
+            fetch('/api/test-multiprocessing', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const stats = data.results.statistics;
+                        const html = `
+                            <div class="results">
+                                <h3 class="success">✅ Test Multiprocessing Réussi</h3>
+                                <p><strong>Tâches:</strong> ${stats.total_tasks} (${stats.successful} réussies, ${stats.failed} échouées)</p>
+                                <p><strong>Temps moyen par tâche:</strong> ${stats.avg_execution_time}s</p>
+                                <p><strong>Temps total:</strong> ${stats.total_time}s</p>
+                                <p><strong>Accélération:</strong> x${stats.speedup.toFixed(2)} (Efficacité: ${stats.efficiency_percent}%)</p>
+                                <p><strong>Scalabilité:</strong> ${stats.scalability}</p>
+                                <p><strong>Processeurs disponibles:</strong> ${stats.parallel_processes}</p>
+                            </div>
+                        `;
+                        resultsDiv.innerHTML = html;
+                    } else {
+                        resultsDiv.innerHTML = `<p class="error">❌ Erreur: ${data.error}</p>`;
+                    }
+                })
+                .catch(error => {
+                    resultsDiv.innerHTML = `<p class="error">❌ Erreur réseau: ${error.message}</p>`;
+                });
+        }
+        
+        function generateConcurrentPlans() {
+            const plansDiv = document.getElementById('concurrent-plans');
+            plansDiv.innerHTML = '<div class="results"><p class="info">⏳ Génération de 3 plans en cours...</p></div>';
+            
+            const startTime = Date.now();
+            const promises = [];
+            
+            // Générer 3 plans avec différentes destinations et options
+            const destinations = ['Paris', 'Londres', 'Tokyo'];
+            
+            for (let i = 0; i < 3; i++) {
+                const promise = fetch('/create_plan', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        preferences: {
+                            destination: destinations[i],
+                            origin: 'TUN',
+                            depart_date: '2024-06-01',
+                            return_date: '2024-06-07',
+                            budget: 1500 + (i * 500),
+                            travelers: 2,
+                            travel_style: i === 0 ? 'budget' : i === 1 ? 'standard' : 'luxury'
+                        },
+                        use_multiprocessing: true,
+                        use_ai: i % 2 === 0
+                    })
+                }).then(r => r.json());
+                
+                promises.push(promise);
+            }
+            
+            Promise.all(promises).then(results => {
+                const totalTime = (Date.now() - startTime) / 1000;
+                let successCount = 0;
+                let errorCount = 0;
+                
+                const resultsHtml = results.map((r, i) => {
+                    if (r.success) successCount++;
+                    else errorCount++;
+                    
+                    return `
+                        <div style="margin: 10px 0; padding: 10px; background: ${r.success ? '#d4edda' : '#f8d7da'}; border-radius: 4px;">
+                            <strong>Plan ${i+1} (${destinations[i]}):</strong> 
+                            ${r.success ? '✅ ' : '❌ '}
+                            ${r.message || r.error}
+                            ${r.plan_id ? `<br/><small>ID: ${r.plan_id} | Multiprocessing: ${r.multiprocessing} | IA: ${r.ai}</small>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                
+                plansDiv.innerHTML = `
+                    <div class="results">
+                        <h3 class="${successCount === 3 ? 'success' : errorCount > 0 ? 'error' : 'info'}">
+                            ${successCount === 3 ? '✅' : '⚠️'} Génération Concurrente Terminée
+                        </h3>
+                        <p><strong>Temps total:</strong> ${totalTime.toFixed(2)}s</p>
+                        <p><strong>Résultats:</strong> ${successCount} réussis, ${errorCount} échoués</p>
+                        ${resultsHtml}
+                    </div>
+                `;
+            }).catch(error => {
+                plansDiv.innerHTML = `<div class="results"><p class="error">❌ Erreur: ${error.message}</p></div>`;
+            });
+        }
+        
+        function updateChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            // Supprimer l'ancien graphique s'il existe
+            if (window.performanceChart instanceof Chart) {
+                window.performanceChart.destroy();
+            }
+            
+            window.performanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: performanceData.map(d => d.type),
+                    datasets: [{
+                        label: 'Temps d\'exécution (s)',
+                        data: performanceData.map(d => d.time),
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            title: { 
+                                display: true, 
+                                text: 'Temps (secondes)',
+                                font: { size: 14 }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Mode d\'exécution',
+                                font: { size: 14 }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const data = performanceData[context.dataIndex];
+                                    return [
+                                        `Temps: ${data.time}s`,
+                                        data.speedup ? `Accélération: x${data.speedup}` : ''
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Écouter les événements Socket.IO
+        function addSocketEvent(message, type = 'info') {
+            eventCount++;
+            const eventsList = document.getElementById('events-list');
+            const timestamp = new Date().toLocaleTimeString();
+            const eventDiv = document.createElement('div');
+            eventDiv.innerHTML = `
+                <div style="margin: 5px 0; padding: 5px; background: #f8f9fa; border-radius: 3px; border-left: 3px solid ${type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#17a2b8'};">
+                    <small>${timestamp}</small> - ${message}
+                </div>
+            `;
+            eventsList.prepend(eventDiv);
+            
+            // Limiter à 10 événements affichés
+            const children = eventsList.children;
+            if (children.length > 10) {
+                eventsList.removeChild(children[children.length - 1]);
+            }
+        }
+        
+        socket.on('connect', () => {
+            addSocketEvent('✅ Connecté au serveur Socket.IO', 'success');
+        });
+        
+        socket.on('disconnect', () => {
+            addSocketEvent('⚠️ Déconnecté du serveur', 'error');
+        });
+        
+        socket.on('plan_started', data => {
+            addSocketEvent(`🚀 Plan ${data.plan_id} démarré (Multiprocessing: ${data.multiprocessing}, IA: ${data.ai})`);
+        });
+        
+        socket.on('plan_ready', data => {
+            addSocketEvent(`✅ Plan ${data.plan_id} prêt en ${data.generation_time}s (${data.days} jours, ${data.activities} activités)`, 'success');
+        });
+        
+        socket.on('plan_error', data => {
+            addSocketEvent(`❌ Erreur plan ${data.plan_id}: ${data.error}`, 'error');
+        });
+        
+        socket.on('plan_deleted', data => {
+            addSocketEvent(`🗑️ Plan ${data.plan_id} supprimé`);
+        });
+        
+        // Initialiser le graphique
+        updateChart();
+    </script>
+</body>
+</html>

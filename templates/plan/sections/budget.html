@@ -1,0 +1,80 @@
+<!-- plan/sections/budget.html -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Détails du budget</h5>
+    </div>
+    <div class="card-body">
+        {% if contenu.estimated_budget and contenu.estimated_budget is mapping %}
+            <div class="row">
+                <!-- Graphique circulaire -->
+                <div class="col-md-6">
+                    <div class="card border-0">
+                        <div class="card-body text-center">
+                            <h6 class="text-success mb-3">Répartition du budget</h6>
+                            <div class="budget-chart mx-auto" style="width: 200px; height: 200px;">
+                                <!-- Placeholder pour graphique - vous pouvez intégrer Chart.js ici -->
+                                <div class="d-flex justify-content-center align-items-center h-100">
+                                    <div class="text-center">
+                                        <h3 class="text-success">{{ contenu.estimated_budget.total }}€</h3>
+                                        <small class="text-muted">Budget total</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Détails du budget -->
+                <div class="col-md-6">
+                    <div class="card border-0">
+                        <div class="card-body">
+                            <h6 class="text-success mb-3">Détails par catégorie</h6>
+                            <div class="budget-details">
+                                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                                    <span>✈️ Vols</span>
+                                    <strong class="text-primary">{{ contenu.estimated_budget.flight }} €</strong>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                                    <span>🏨 Hébergement</span>
+                                    <strong class="text-success">{{ contenu.estimated_budget.accommodation }} €</strong>
+                                </div>
+                                {% if contenu.estimated_budget.food %}
+                                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                                    <span>🍽️ Nourriture</span>
+                                    <strong class="text-warning">{{ contenu.estimated_budget.food }} €</strong>
+                                </div>
+                                {% endif %}
+                                {% if contenu.estimated_budget.activities %}
+                                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                                    <span>🎡 Activités</span>
+                                    <strong class="text-info">{{ contenu.estimated_budget.activities }} €</strong>
+                                </div>
+                                {% endif %}
+                                {% if contenu.estimated_budget.transport %}
+                                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                                    <span>🚗 Transport local</span>
+                                    <strong class="text-secondary">{{ contenu.estimated_budget.transport }} €</strong>
+                                </div>
+                                {% endif %}
+                                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                                    <span>📅 Budget quotidien</span>
+                                    <strong class="text-danger">{{ contenu.estimated_budget.daily }} €/jour</strong>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-success text-white rounded">
+                                    <span><strong>TOTAL</strong></span>
+                                    <strong>{{ contenu.estimated_budget.total }} €</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Aucun détail de budget disponible</p>
+            </div>
+        {% endif %}
+    </div>
+</div>

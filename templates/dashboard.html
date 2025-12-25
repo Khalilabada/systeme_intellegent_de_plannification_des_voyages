@@ -1,0 +1,1767 @@
+<!-- dashboard.html - VERSION COMPLÈTE CORRIGÉE -->
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Assistant de Planification de Voyages{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <!-- En-tête -->
+  <div class="d-flex justify-content-center align-items-center mb-3">
+    <div class="bg-primary rounded-circle p-3 me-3 shadow">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="white" class="bi bi-airplane" viewBox="0 0 16 16">
+        <path d="M6.428 1.151C6.708.591 7.213 0 8 0s1.292.592 1.572 1.151C9.861 1.73 10 2.431 10 3v3.691l5.17 2.585a1.5 1.5 0 0 1 .83 1.342V12a.5.5 0 0 1-.582.493l-5.507-.918-.375 2.253 1.318 1.318A.5.5 0 0 1 10.5 16h-5a.5.5 0 0 1-.354-.854l1.319-1.318-.376-2.253-5.507.918A.5.5 0 0 1 0 12v-1.382a1.5 1.5 0 0 1 .83-1.342L6 6.691V3c0-.568.14-1.271.428-1.849Z"/>
+      </svg>
+    </div>
+    <h1 class="display-4 mb-0">سافر في دارك</h1>
+  </div>
+  <h1 class="mb-4 text-center"><i class="bi bi-airplane" style="color: #1d17d2;"></i> Assistant Intelligent de Planification de Voyages</h1>
+  
+  <!-- ==================== STATISTIQUES ==================== -->
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-header">
+          <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Performances du Système</h4>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="card bg-success text-white mb-3">
+                <div class="card-body text-center">
+                  <h6 class="card-title">Plans Générés</h6>
+                  <h2 id="plans-generes" class="card-text">{{ plans_termines if plans_termines is defined else 0 }}</h2>
+                  <small>Total réussis</small>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-3">
+              <div class="card bg-primary text-white mb-3">
+                <div class="card-body text-center">
+                  <h6 class="card-title">Speedup Moyen</h6>
+                  <h2 id="speedup-moyen" class="card-text">
+                    {% if metriques is defined and metriques.global and metriques.global.speedup_moyen is defined %}
+                      {{ "%.2f"|format(metriques.global.speedup_moyen) }}x
+                    {% else %}
+                      0.00x
+                    {% endif %}
+                  </h2>
+                  <small>Accélération moyenne</small>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-3">
+              <div class="card bg-warning text-dark mb-3">
+                <div class="card-body text-center">
+                  <h6 class="card-title">Temps Moyen/Plan</h6>
+                  <h2 id="temps-moyen-plan" class="card-text">
+                    {% if metriques is defined and metriques.global and metriques.global.temps_moyen_par_plan is defined %}
+                      {{ "%.1f"|format(metriques.global.temps_moyen_par_plan) }}s
+                    {% else %}
+                      0.0s
+                    {% endif %}
+                  </h2>
+                  <small>Par plan généré</small>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-3">
+              <div class="card bg-secondary text-white mb-3">
+                <div class="card-body text-center">
+                  <h6 class="card-title">Capacité Concurrence</h6>
+                  <h2 id="capacite-concurrence" class="card-text">
+                    {{ plans_simultanes if plans_simultanes is defined else 1 }} / {{ cpus if cpus is defined else 1 }}
+                  </h2>
+                  <small>Plans max / CPUs</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FORMULAIRE BATCH ==================== -->
+  <div class="card p-4 mb-4 shadow-lg">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0">
+        <i class="bi bi-airplane"></i> Générez vos plans de voyage
+      </h4>
+      <div>
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="ajouterPlan()">
+          <i class="bi bi-plus-circle"></i> Ajouter un plan
+        </button>
+      </div>
+    </div>
+    
+    <!-- Conteneur des formulaires -->
+    <form id="form-batch" onsubmit="return false;">
+      <div id="conteneurPlans">
+        <div class="formulaire-plan mb-3 p-3 border rounded bg-light">
+          <div class="row g-2">
+            <div class="col-md-2">
+              <label class="form-label small">Origine</label>
+              <input class="form-control form-control-sm champ-origine" placeholder="TUN" value="TUN" required />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small">Destination*</label>
+              <input class="form-control form-control-sm champ-destination" placeholder="Paris" required />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small">Date départ*</label>
+              <input class="form-control form-control-sm champ-date-depart" type="date" required />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small">Date retour*</label>
+              <input class="form-control form-control-sm champ-date-retour" type="date" required />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small">Budget (€)*</label>
+              <input class="form-control form-control-sm champ-budget" type="number" min="0" placeholder="1000" value="1000" required />
+            </div>
+            <div class="col-md-1">
+              <label class="form-label small">&nbsp;</label>
+              <button type="button" class="btn btn-sm btn-danger w-100" onclick="supprimerPlan(this)" disabled>
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+    
+    <!-- Lancement -->
+    <div class="mt-4">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <span class="badge bg-info fs-6" id="badge-nombre-plans">1 plan</span>
+        </div>
+        <button class="btn btn-warning btn-lg" onclick="lancerBatch()" id="bouton-lancer">
+          <i class="bi bi-magic"></i> Générer mes plans
+        </button>
+      </div>
+    </div>
+    
+    <!-- Progression -->
+    <div id="progression-batch" class="mt-4 d-none">
+      <div class="card bg-dark text-white">
+        <div class="card-body">
+          <h5 class="card-title">
+            <i class="bi bi-hourglass-split"></i> Génération en cours
+            <span class="badge bg-warning ms-2" id="statut-batch">Préparation...</span>
+          </h5>
+          
+          <div class="progress mb-3" style="height: 30px;">
+            <div id="barre-progression" class="progress-bar progress-bar-striped progress-bar-animated bg-warning" 
+                 role="progressbar" style="width: 0%">
+              <span id="texte-progression" class="fs-6">0%</span>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <div class="d-flex justify-content-between mb-2">
+                <span><i class="bi bi-geo-alt"></i> Destination en cours:</span>
+                <span id="plan-courant" class="fst-italic">-</span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex justify-content-between mb-2">
+                <span><i class="bi bi-check-circle"></i> Progression:</span>
+                <span id="compteur-batch" class="fw-bold">0/0</span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex justify-content-between mb-2">
+                <span><i class="bi bi-clock-history"></i> Temps écoulé:</span>
+                <span id="temps-ecoule" class="fw-bold">0s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== GRAPHIQUE COMPARATIF ==================== -->
+  <div class="card mb-4 d-none" id="section-graphique-post-generation">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="bi bi-bar-chart"></i> Comparaison Performance - Batch Actuel
+      </h5>
+      <div>
+        <span class="badge bg-light text-dark me-2" id="badge-batch-courant"></span>
+        <button class="btn btn-sm btn-light" onclick="exporterGraphiqueBatch()">
+          <i class="bi bi-download"></i> Exporter
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <!-- Graphique principal -->
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-body">
+              <canvas id="graphiqueBatchActuel" height="300"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Analyse performance -->
+        <div class="col-md-4">
+          <div class="card bg-light">
+            <div class="card-body">
+              <h6 class="card-title border-bottom pb-2">
+                <i class="bi bi-speedometer2"></i> Analyse de Performance
+              </h6>
+              
+              <div id="analyse-performance-batch">
+                <div class="text-center text-muted py-3">
+                  <i class="bi bi-graph-up fs-1"></i>
+                  <p class="mt-2">Générez un batch pour voir l'analyse</p>
+                </div>
+              </div>
+              
+              <!-- Tableau des métriques -->
+              <div class="mt-3" id="tableau-metriques-batch">
+                <table class="table table-sm small">
+                  <tbody id="tableau-metriques-content">
+                    <!-- Rempli dynamiquement -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Détails du batch actuel -->
+      <div class="row mt-3">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-body">
+              <h6><i class="bi bi-info-circle"></i> Détails du Batch</h6>
+              <div class="row" id="details-batch-actuel">
+                <!-- Rempli dynamiquement -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== HISTORIQUE DES BATCHS ==================== -->
+  <div class="card mb-4" id="section-batchs-termines">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="bi bi-history"></i> Historique des Batchs Terminés
+      </h5>
+      <span class="badge bg-light text-dark" id="nombre-batchs-termines">
+        {% if metriques is defined and metriques.batchs_termines %}
+          {{ metriques.batchs_termines|length }}
+        {% else %}
+          0
+        {% endif %}
+      </span>
+    </div>
+    <div class="card-body">
+      <div id="conteneur-historique-batchs">
+        {% if metriques is defined and metriques.batchs_termines %}
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Batch ID</th>
+                  <th>Plans</th>
+                  <th>Temps total</th>
+                  <th>Speedup</th>
+                  <th>Temps/Plan</th>
+                  <th>Gain temps</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="historique-batchs-body">
+                {% for batch_id, infos in metriques.batchs_termines.items() %}
+                <tr id="batch-{{ batch_id }}">
+                  <td><code>{{ batch_id }}</code></td>
+                  <td>
+                    <span class="badge bg-success">{{ infos.plans_reussis }}</span>
+                    /<span class="badge bg-secondary">{{ infos.total_plans }}</span>
+                  </td>
+                  <td>{{ infos.temps_total }}s</td>
+                  <td>
+                    <span class="badge 
+                      {% if infos.speedup >= 2.0 %}bg-success
+                      {% elif infos.speedup >= 1.2 %}bg-warning
+                      {% else %}bg-danger{% endif %}">
+                      {{ "%.2f"|format(infos.speedup) }}x
+                    </span>
+                  </td>
+                  <td>{{ infos.temps_moyen_plan }}s</td>
+                  <td>
+                    <span class="badge bg-success">
+                      {{ "%.0f"|format(infos.temps_sequentiel_estime - infos.temps_total) }}s
+                    </span>
+                  </td>
+                  <td>{{ infos.date_debut }}</td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="voirDetailsBatch('{{ batch_id }}')">
+                      <i class="bi bi-eye"></i> Détails
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center text-muted py-4">
+            <i class="bi bi-clock-history fs-1"></i>
+            <p class="mt-2 mb-0">Aucun batch dans l'historique</p>
+            <small>Les batchs terminés apparaissent ici pendant 1 heure</small>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== HISTORIQUE DES PLANS ==================== -->
+  <div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+      <h5 class="mb-0">
+        <i class="bi bi-journal-text"></i> Historique des Plans Générés
+        <span class="badge bg-light text-dark ms-2" id="nombre-plans">{{ plans|length if plans is defined else 0 }}</span>
+      </h5>
+    </div>
+    <div class="card-body">
+      <div id="conteneur-historique-plans">
+        {% if plans is defined and plans %}
+          <div class="row g-3">
+            {% for p in plans %}
+            <div class="col-md-6 col-lg-4" id="plan-{{ p.id }}">
+              <div class="card shadow-sm h-100">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <h5 class="card-title mb-1">
+                      <i class="bi bi-geo-alt"></i> Plan #{{ p.id }}
+                    </h5>
+                    <span class="badge 
+                      {% if p.status == 'pret' %}bg-success
+                      {% elif p.status == 'pret_ia' %}bg-info
+                      {% elif p.status == 'en_cours' %}bg-warning
+                      {% elif p.status == 'erreur' %}bg-danger
+                      {% else %}bg-secondary{% endif %}">
+                      {{ p.status }}
+                    </span>
+                  </div>
+                  <p class="card-text small">
+                    {% if p.preferences %}
+                      {% set prefs = p.preferences|fromjson %}
+                      <i class="bi bi-geo-fill"></i> {{ prefs.destination if prefs.destination else 'Inconnu' }}<br>
+                      <i class="bi bi-calendar"></i> {{ prefs.depart_date if prefs.depart_date else 'Date inconnue' }}
+                      → {{ prefs.return_date if prefs.return_date else 'Date inconnue' }}<br>
+                      {% if prefs.budget %}<i class="bi bi-currency-euro"></i> {{ prefs.budget }}€{% endif %}
+                    {% endif %}
+                  </p>
+                  <p class="card-text">
+                    <small class="text-muted">
+                      <i class="bi bi-calendar"></i> Créé le {{ p.created_at.strftime("%Y-%m-%d %H:%M") }}
+                    </small>
+                  </p>
+                  <div class="d-flex justify-content-between mt-2">
+                    <a class="btn btn-primary btn-sm" href="{{ url_for('voir_plan', plan_id=p.id) }}">
+                      <i class="bi bi-eye"></i> Voir
+                    </a>
+                    <a class="btn btn-secondary btn-sm" href="{{ url_for('exporter_pdf', plan_id=p.id) }}">
+                      <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center text-muted py-4">
+            <i class="bi bi-journal fs-1"></i>
+            <p class="mt-2 mb-0">Aucun plan généré</p>
+            <small>Les plans générés apparaissent ici automatiquement</small>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modale Détails Batch -->
+<div class="modal fade" id="modalDetailsBatch" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-graph-up"></i> Détails du Batch
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="contenu-details-batch">
+          <!-- Chargé dynamiquement -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== VARIABLES GLOBALES ====================
+let socket = null;
+let batchCourantId = null;
+let debutBatch = null;
+let timerBatch = null;
+let graphiqueBatchActuel = null;
+
+// ==================== INITIALISATION SOCKET.IO ====================
+function initialiserSocket() {
+    console.log('⚡ Initialisation Socket.IO...');
+    
+    // Vérifier si Socket.IO est déjà chargé
+    if (typeof io !== 'undefined') {
+        connecterSocket();
+    } else {
+        // Charger depuis le serveur local
+        chargerSocketScript();
+    }
+}
+
+function chargerSocketScript() {
+    const script = document.createElement('script');
+    script.src = "/socket.io/socket.io.js";  // Chemin relatif au serveur
+    script.onload = function() {
+        console.log('✅ Socket.IO chargé');
+        connecterSocket();
+    };
+    script.onerror = function() {
+        console.error('❌ Erreur chargement Socket.IO local, tentative CDN...');
+        chargerSocketCDN();
+    };
+    document.head.appendChild(script);
+}
+
+function chargerSocketCDN() {
+    const script = document.createElement('script');
+    script.src = "https://cdn.socket.io/4.5.4/socket.io.min.js";
+    script.onload = function() {
+        console.log('✅ Socket.IO CDN chargé');
+        connecterSocket();
+    };
+    script.onerror = function() {
+        console.error('❌ Impossible de charger Socket.IO');
+        afficherNotification('Erreur', 'Impossible de charger la connexion temps réel', 'danger');
+    };
+    document.head.appendChild(script);
+}
+
+function connecterSocket() {
+    try {
+        socket = io({
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            timeout: 20000
+        });
+        
+        socket.on('connect', () => {
+            console.log('✅ Socket.IO connecté avec ID:', socket.id);
+            afficherNotification('Connexion', 'Connecté au serveur en temps réel', 'success');
+        });
+        
+        socket.on('connect_error', (error) => {
+            console.error('❌ Erreur connexion Socket.IO:', error);
+            afficherNotification('Erreur connexion', 'Reconnexion en cours...', 'warning');
+        });
+        
+        socket.on('disconnect', (reason) => {
+            console.log('⚠️ Socket.IO déconnecté:', reason);
+            if (reason === 'io server disconnect') {
+                socket.connect();
+            }
+        });
+        
+        // GESTION DES ÉVÉNEMENTS BATCH
+        socket.on('progression_batch', (data) => {
+            console.log('📊 Événement progression_batch:', data);
+            if (batchCourantId && data.batch_id === batchCourantId) {
+                mettreAJourProgression(data);
+            }
+        });
+        
+        socket.on('batch_termine', (data) => {
+            console.log('✅ Événement batch_termine:', data);
+            if (batchCourantId && data.batch_id === batchCourantId) {
+                terminerBatch(data);
+            }
+        });
+        
+        socket.on('erreur_batch', (data) => {
+            console.error('❌ Événement erreur_batch:', data);
+            if (batchCourantId && data.batch_id === batchCourantId) {
+                erreurBatch(data);
+            }
+        });
+        
+        socket.on('plan_supprime', (data) => {
+            console.log('🗑️ Événement plan_supprime:', data);
+            if (data.plan_id) {
+                const element = document.getElementById(`plan-${data.plan_id}`);
+                if (element) {
+                    element.remove();
+                    afficherNotification('Suppression', 'Plan supprimé avec succès', 'info');
+                    actualiserCompteurPlansHistorique();
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la connexion Socket.IO:', error);
+    }
+}
+
+// ==================== NOTIFICATIONS TOAST ====================
+function afficherNotification(titre, message, type = 'info') {
+    // Vérifier si Bootstrap est chargé
+    if (typeof bootstrap === 'undefined' || typeof bootstrap.Toast === 'undefined') {
+        console.log(`[${type.toUpperCase()}] ${titre}: ${message}`);
+        return;
+    }
+    
+    const toastId = 'toast-' + Date.now();
+    const toastHTML = `
+        <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-${type} text-white">
+                <strong class="me-auto">${titre}</strong>
+                <small>${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    let conteneur = document.getElementById('conteneur-notifications');
+    if (!conteneur) {
+        conteneur = document.createElement('div');
+        conteneur.id = 'conteneur-notifications';
+        conteneur.className = 'position-fixed top-0 end-0 p-3';
+        conteneur.style.zIndex = '9999';
+        document.body.appendChild(conteneur);
+    }
+    
+    conteneur.insertAdjacentHTML('beforeend', toastHTML);
+    
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { 
+        delay: 5000,
+        animation: true
+    });
+    toast.show();
+    
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+
+// ==================== GESTION FORMULAIRES ====================
+function ajouterPlan() {
+    const conteneur = document.getElementById('conteneurPlans');
+    const nombre = conteneur.children.length + 1;
+    
+    // Calcul des dates par défaut
+    const aujourdhui = new Date();
+    const dateDepart = new Date(aujourdhui);
+    dateDepart.setDate(aujourdhui.getDate() + 7 * nombre);
+    const dateRetour = new Date(dateDepart);
+    dateRetour.setDate(dateDepart.getDate() + 7);
+    
+    const formulaireHTML = `
+        <div class="formulaire-plan mb-3 p-3 border rounded bg-light">
+            <div class="row g-2">
+                <div class="col-md-2">
+                    <label class="form-label small">Origine</label>
+                    <input class="form-control form-control-sm champ-origine" placeholder="TUN" value="TUN" required />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Destination*</label>
+                    <input class="form-control form-control-sm champ-destination" placeholder="Paris, Londres, Tokyo..." required />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Date départ*</label>
+                    <input class="form-control form-control-sm champ-date-depart" type="date" 
+                           value="${dateDepart.toISOString().split('T')[0]}" required />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Date retour*</label>
+                    <input class="form-control form-control-sm champ-date-retour" type="date" 
+                           value="${dateRetour.toISOString().split('T')[0]}" required />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Budget (€)*</label>
+                    <input class="form-control form-control-sm champ-budget" type="number" 
+                           min="0" placeholder="1000" value="${800 + (nombre * 200)}" required />
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label small">&nbsp;</label>
+                    <button type="button" class="btn btn-sm btn-danger w-100" onclick="supprimerPlan(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    conteneur.insertAdjacentHTML('beforeend', formulaireHTML);
+    actualiserCompteurPlans();
+}
+
+function supprimerPlan(bouton) {
+    const conteneur = document.getElementById('conteneurPlans');
+    const formulaire = bouton.closest('.formulaire-plan');
+    
+    if (conteneur.children.length > 1) {
+        formulaire.remove();
+        actualiserCompteurPlans();
+    }
+}
+
+function actualiserCompteurPlans() {
+    const nombre = document.querySelectorAll('.formulaire-plan').length;
+    const badge = document.getElementById('badge-nombre-plans');
+    
+    if (badge) {
+        badge.textContent = nombre === 1 ? '1 plan' : `${nombre} plans`;
+        badge.className = 'badge fs-6 bg-info';
+    }
+}
+
+// ==================== LANCEMENT BATCH ====================
+async function lancerBatch() {
+    console.log('🚀 Démarrage du batch...');
+    
+    const formulaires = document.querySelectorAll('.formulaire-plan');
+    const plans = [];
+    
+    // Validation des formulaires
+    let erreurValidation = false;
+    formulaires.forEach((formulaire, index) => {
+        const destination = formulaire.querySelector('.champ-destination').value.trim();
+        const depart = formulaire.querySelector('.champ-date-depart').value;
+        const retour = formulaire.querySelector('.champ-date-retour').value;
+        const budget = formulaire.querySelector('.champ-budget').value;
+        
+        // Validation des champs requis
+        if (!destination || !depart || !retour || !budget) {
+            erreurValidation = true;
+            formulaire.classList.add('border-danger');
+            afficherNotification('Erreur', `Plan ${index + 1}: champs obligatoires manquants`, 'danger');
+            return;
+        }
+        
+        // Validation des dates
+        const dateDepart = new Date(depart);
+        const dateRetour = new Date(retour);
+        if (dateRetour <= dateDepart) {
+            erreurValidation = true;
+            formulaire.classList.add('border-danger');
+            afficherNotification('Erreur', `Plan ${index + 1}: la date de retour doit être après la date de départ`, 'danger');
+            return;
+        }
+        
+        // Validation du budget
+        if (parseFloat(budget) <= 0) {
+            erreurValidation = true;
+            formulaire.classList.add('border-danger');
+            afficherNotification('Erreur', `Plan ${index + 1}: le budget doit être positif`, 'danger');
+            return;
+        }
+        
+        formulaire.classList.remove('border-danger');
+    });
+    
+    if (erreurValidation) return;
+    
+    // Préparation des données
+    formulaires.forEach(formulaire => {
+        const planData = {
+            preferences: {
+                origin: formulaire.querySelector('.champ-origine').value.trim() || 'TUN',
+                destination: formulaire.querySelector('.champ-destination').value.trim(),
+                depart_date: formulaire.querySelector('.champ-date-depart').value,
+                return_date: formulaire.querySelector('.champ-date-retour').value,
+                budget: parseFloat(formulaire.querySelector('.champ-budget').value) || 1000
+            }
+        };
+        plans.push(planData);
+    });
+    
+    // Désactiver le bouton pendant l'envoi
+    const bouton = document.getElementById('bouton-lancer');
+    const texteOriginal = bouton.innerHTML;
+    bouton.disabled = true;
+    bouton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Démarrage...';
+    
+    try {
+        console.log('📤 Envoi des données batch...', { plans: plans });
+        
+        const response = await fetch('/creer_batch_plans', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ plans: plans })
+        });
+        
+        const resultat = await response.json();
+        console.log('📥 Réponse serveur:', resultat);
+        
+        if (response.ok && resultat.success) {
+            afficherNotification('Batch démarré!', `${plans.length} plans en cours de génération`, 'success');
+            
+            batchCourantId = resultat.batch_id;
+            initialiserInterfaceBatch();
+            
+            // Rejoindre le batch dans Socket.IO
+            if (socket && socket.connected) {
+                socket.emit('rejoindre_batch', { batch_id: batchCourantId });
+            }
+            
+        } else {
+            afficherNotification('Erreur', resultat.erreur || 'Erreur lors du démarrage du batch', 'danger');
+            bouton.disabled = false;
+            bouton.innerHTML = texteOriginal;
+        }
+        
+    } catch (erreur) {
+        console.error('❌ Erreur réseau:', erreur);
+        afficherNotification('Erreur réseau', 'Impossible de démarrer le batch', 'danger');
+        bouton.disabled = false;
+        bouton.innerHTML = texteOriginal;
+    }
+}
+
+// ==================== GESTION PROGRESSION ====================
+function initialiserInterfaceBatch() {
+    console.log('🎬 Initialisation interface batch:', batchCourantId);
+    
+    const section = document.getElementById('progression-batch');
+    section.classList.remove('d-none');
+    
+    // Réinitialiser l'affichage
+    document.getElementById('barre-progression').style.width = '0%';
+    document.getElementById('texte-progression').textContent = '0%';
+    document.getElementById('compteur-batch').textContent = '0/0';
+    document.getElementById('plan-courant').textContent = 'Initialisation...';
+    document.getElementById('temps-ecoule').textContent = '0s';
+    document.getElementById('statut-batch').textContent = 'En cours';
+    document.getElementById('statut-batch').className = 'badge bg-warning ms-2';
+    
+    // Démarrer le timer
+    debutBatch = Date.now();
+    demarrerTimer();
+}
+
+function mettreAJourProgression(data) {
+    console.log('📊 Mise à jour progression:', data);
+    
+    // Extraction sécurisée des données
+    const total = data.total_plans || data.total || data.total || 1;
+    const termines = data.termines || data.completed || 0;
+    const progression = data.progression || (total > 0 ? Math.round((termines / total) * 100) : 0);
+    
+    // Mise à jour de l'interface
+    document.getElementById('barre-progression').style.width = `${progression}%`;
+    document.getElementById('texte-progression').textContent = `${progression}%`;
+    document.getElementById('compteur-batch').textContent = `${termines}/${total}`;
+    
+    if (data.plan_courant || data.destination) {
+        document.getElementById('plan-courant').textContent = data.plan_courant || data.destination || 'Traitement...';
+    }
+    
+    if (data.message) {
+        console.log('📝 Message batch:', data.message);
+    }
+}
+
+function terminerBatch(data) {
+    console.log('✅ Terminaison batch:', data);
+    
+    // Mise à jour finale de l'interface
+    document.getElementById('barre-progression').style.width = '100%';
+    document.getElementById('texte-progression').textContent = '100%';
+    document.getElementById('statut-batch').textContent = 'Terminé ✓';
+    document.getElementById('statut-batch').className = 'badge bg-success ms-2';
+    document.getElementById('plan-courant').textContent = 'Terminé';
+    
+    // Arrêter le timer
+    arreterTimer();
+    
+    // Afficher le graphique
+    if (data.resultat) {
+        afficherGraphiqueBatch(data);
+    }
+    
+    afficherNotification(
+        'Batch terminé!', 
+        `${data.resultat?.plans_reussis || 0} plans générés avec succès`, 
+        'success'
+    );
+    
+    // Réactiver le bouton
+    document.getElementById('bouton-lancer').disabled = false;
+    document.getElementById('bouton-lancer').innerHTML = '<i class="bi bi-magic"></i> Générer mes plans';
+    
+    // Actualiser les données
+    setTimeout(() => {
+        actualiserHistorique();
+        actualiserHistoriquePlans();
+    }, 2000);
+    
+    batchCourantId = null;
+}
+
+function erreurBatch(data) {
+    console.error('❌ Erreur batch:', data);
+    
+    document.getElementById('barre-progression').className = 'progress-bar bg-danger';
+    document.getElementById('statut-batch').textContent = 'Erreur ✗';
+    document.getElementById('statut-batch').className = 'badge bg-danger ms-2';
+    document.getElementById('plan-courant').textContent = 'Erreur';
+    
+    arreterTimer();
+    
+    // Réactiver le bouton
+    document.getElementById('bouton-lancer').disabled = false;
+    document.getElementById('bouton-lancer').innerHTML = '<i class="bi bi-magic"></i> Générer mes plans';
+    
+    afficherNotification('Erreur batch', data.erreur || 'Erreur inconnue', 'danger');
+    batchCourantId = null;
+}
+
+function demarrerTimer() {
+    arreterTimer();
+    timerBatch = setInterval(() => {
+        if (debutBatch) {
+            const ecouleMs = Date.now() - debutBatch;
+            const ecoule = Math.floor(ecouleMs / 1000);
+            const minutes = Math.floor(ecoule / 60);
+            const secondes = ecoule % 60;
+            document.getElementById('temps-ecoule').textContent = 
+                minutes > 0 ? `${minutes}m ${secondes}s` : `${secondes}s`;
+        }
+    }, 1000);
+}
+
+function arreterTimer() {
+    if (timerBatch) {
+        clearInterval(timerBatch);
+        timerBatch = null;
+    }
+}
+
+// ==================== GRAPHIQUE COMPARATIF ====================
+function afficherGraphiqueBatch(data) {
+    console.log('📈 Affichage graphique batch:', data);
+    
+    const section = document.getElementById('section-graphique-post-generation');
+    if (!section) return;
+    
+    section.classList.remove('d-none');
+    
+    // Mettre à jour le badge
+    const badge = document.getElementById('badge-batch-courant');
+    if (badge && data.batch_id) {
+        badge.textContent = `Batch ${data.batch_id.substring(0, 8)}...`;
+    }
+    
+    // Calculer les données pour le graphique
+    const totalPlans = data.resultat?.total_plans || 1;
+    const tempsParalleleReel = data.resultat?.temps_total_batch || 0;
+    const tempsSequentielTheorique = totalPlans * 30; // Estimation: 30s par plan
+    const speedup = data.resultat?.speedup_batch || 1;
+    
+    // Créer le graphique
+    creerGraphiqueComparatif(tempsSequentielTheorique, tempsParalleleReel, speedup);
+    
+    // Afficher l'analyse
+    if (data.resultat) {
+        afficherAnalysePerformance({
+            totalPlans: totalPlans,
+            tempsSequentiel: tempsSequentielTheorique,
+            tempsParalleleReel: tempsParalleleReel,
+            speedup: speedup,
+            gainTemps: data.resultat.gain_temps || 0,
+            efficacite: data.resultat.efficacite || 0
+        });
+        
+        afficherTableauMetriques(data);
+        afficherDetailsBatch(data);
+    }
+    
+    // Faire défiler jusqu'au graphique
+    setTimeout(() => {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 500);
+}
+
+function creerGraphiqueComparatif(tempsSequentiel, tempsParallele, speedup) {
+    const canvas = document.getElementById('graphiqueBatchActuel');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Détruire l'ancien graphique s'il existe
+    if (graphiqueBatchActuel) {
+        graphiqueBatchActuel.destroy();
+    }
+    
+    graphiqueBatchActuel = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Séquentiel Théorique', 'Parallèle Réel'],
+            datasets: [
+                {
+                    label: 'Temps de Génération',
+                    data: [tempsSequentiel, tempsParallele],
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.8)',
+                        'rgba(25, 135, 84, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(220, 53, 69)',
+                        'rgb(25, 135, 84)'
+                    ],
+                    borderWidth: 2,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Speedup (x)',
+                    data: [1, speedup],
+                    type: 'line',
+                    borderColor: 'rgb(13, 202, 240)',
+                    backgroundColor: 'rgba(13, 202, 240, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.3,
+                    yAxisID: 'y1',
+                    pointRadius: 6,
+                    pointBackgroundColor: 'rgb(13, 202, 240)'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            if (context.datasetIndex === 0) {
+                                const secondes = context.parsed.y;
+                                if (secondes >= 60) {
+                                    const minutes = Math.floor(secondes / 60);
+                                    const secs = Math.round(secondes % 60);
+                                    return `Temps: ${minutes}m ${secs}s`;
+                                }
+                                return `Temps: ${Math.round(secondes)}s`;
+                            } else {
+                                return `Speedup: ${context.parsed.y.toFixed(2)}x`;
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Mode d\'exécution',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Temps (secondes)',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    min: 0,
+                    ticks: {
+                        callback: function(value) {
+                            if (value >= 60) {
+                                const minutes = Math.floor(value / 60);
+                                const secondes = Math.round(value % 60);
+                                return secondes > 0 ? `${minutes}m ${secondes}s` : `${minutes}m`;
+                            }
+                            return value + 's';
+                        }
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Speedup (x)',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    min: 0,
+                    max: Math.max(5, speedup + 1),
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(1) + 'x';
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+}
+
+// ==================== ANALYSE DE PERFORMANCE ====================
+function afficherAnalysePerformance(metriques) {
+    const container = document.getElementById('analyse-performance-batch');
+    if (!container) return;
+    
+    // Calcul de l'efficacité
+    const efficacite = metriques.efficacite || 
+        ((metriques.speedup / Math.min(metriques.totalPlans, {{ cpus|default(4) }})) * 100);
+    
+    let classEfficacite = 'badge ';
+    if (efficacite >= 80) classEfficacite += 'bg-success';
+    else if (efficacite >= 60) classEfficacite += 'bg-warning';
+    else classEfficacite += 'bg-danger';
+    
+    let classSpeedup = 'badge ';
+    if (metriques.speedup >= 2.0) classSpeedup += 'bg-success';
+    else if (metriques.speedup >= 1.5) classSpeedup += 'bg-warning';
+    else classSpeedup += 'bg-danger';
+    
+    const reduction = ((metriques.tempsSequentiel - metriques.tempsParalleleReel) / metriques.tempsSequentiel * 100);
+    
+    container.innerHTML = `
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span>Efficacité:</span>
+                <span class="${classEfficacite}">${efficacite.toFixed(1)}%</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span>Speedup:</span>
+                <span class="${classSpeedup}">${metriques.speedup.toFixed(2)}x</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span>Gain temps:</span>
+                <span class="badge bg-success">${formaterTempsHumain(metriques.gainTemps)}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <span>Réduction:</span>
+                <span class="badge bg-info">${reduction.toFixed(1)}%</span>
+            </div>
+        </div>
+        
+        <div class="progress mb-3" style="height: 12px;">
+            <div class="progress-bar bg-success" 
+                 style="width: ${Math.min(100, efficacite)}%" 
+                 role="progressbar" 
+                 aria-valuenow="${efficacite}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+            </div>
+        </div>
+    `;
+}
+
+function afficherTableauMetriques(data) {
+    const tableau = document.getElementById('tableau-metriques-content');
+    if (!tableau || !data.resultat) return;
+    
+    const resultat = data.resultat;
+    const tauxReussite = resultat.total_plans > 0 
+        ? (resultat.plans_reussis / resultat.total_plans * 100) 
+        : 0;
+    
+    tableau.innerHTML = `
+        <tr>
+            <td>Plans/min:</td>
+            <td class="text-end fw-bold">${(resultat.vitesse_plans_minute || 0).toFixed(1)}</td>
+        </tr>
+        <tr>
+            <td>Taux réussite:</td>
+            <td class="text-end fw-bold">${tauxReussite.toFixed(1)}%</td>
+        </tr>
+        <tr>
+            <td>Temps/plan moyen:</td>
+            <td class="text-end fw-bold">${(resultat.temps_moyen_par_plan || 0).toFixed(1)}s</td>
+        </tr>
+        <tr>
+            <td>Utilisation CPU:</td>
+            <td class="text-end fw-bold">
+                ${Math.min(100, ((resultat.workers_utilises || 1) / {{ cpus|default(4) }}) * 100).toFixed(0)}%
+            </td>
+        </tr>
+    `;
+}
+
+function formaterTempsHumain(secondes) {
+    if (!secondes || secondes <= 0) return '0s';
+    
+    const heures = Math.floor(secondes / 3600);
+    const minutes = Math.floor((secondes % 3600) / 60);
+    const secs = Math.floor(secondes % 60);
+    
+    let result = [];
+    if (heures > 0) result.push(`${heures}h`);
+    if (minutes > 0) result.push(`${minutes}min`);
+    if (secs > 0 || result.length === 0) result.push(`${secs}s`);
+    
+    return result.join(' ');
+}
+
+// ==================== DÉTAILS DU BATCH ACTUEL ====================
+function afficherDetailsBatch(data) {
+    const container = document.getElementById('details-batch-actuel');
+    if (!container || !data.resultat) return;
+    
+    const resultat = data.resultat;
+    const cpus = {{ cpus|default(4) }};
+    const efficacite = (resultat.speedup_batch / Math.min(resultat.total_plans, cpus)) * 100;
+    
+    container.innerHTML = `
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-info-circle"></i> Informations</h6>
+                    <ul class="mb-0 small">
+                        <li>Batch ID: <code>${data.batch_id || 'N/A'}</code></li>
+                        <li>Date: ${new Date().toLocaleString()}</li>
+                        <li>CPUs disponibles: ${cpus}</li>
+                        <li>Concurrence max: {{ plans_simultanes|default(4) }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-graph-up"></i> Performance</h6>
+                    <ul class="mb-0 small">
+                        <li>Temps total: <strong>${resultat.temps_total_batch || 0}s</strong></li>
+                        <li>Speedup: <strong>${(resultat.speedup_batch || 0).toFixed(2)}x</strong></li>
+                        <li>Gain temps: <strong class="text-success">${(resultat.gain_temps || 0).toFixed(0)}s</strong></li>
+                        <li>Réussis: <span class="text-success fw-bold">${resultat.plans_reussis || 0}</span>/<span class="fw-bold">${resultat.total_plans || 0}</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-cpu"></i> Ressources</h6>
+                    <ul class="mb-0 small">
+                        <li>Temps moyen/plan: <strong>${(resultat.temps_moyen_par_plan || 0).toFixed(1)}s</strong></li>
+                        <li>Temps min: <strong>${(resultat.temps_min_par_plan || 0).toFixed(1)}s</strong></li>
+                        <li>Temps max: <strong>${(resultat.temps_max_par_plan || 0).toFixed(1)}s</strong></li>
+                        <li>Efficacité: <strong>${efficacite.toFixed(1)}%</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ==================== MODALE DÉTAILS BATCH ====================
+async function voirDetailsBatch(batchId) {
+    console.log('👁️ Voir détails batch:', batchId);
+    
+    try {
+        const response = await fetch(`/api/batch/${batchId}/metriques`);
+        const data = await response.json();
+        
+        if (data.success && data.metriques) {
+            const metriques = data.metriques;
+            const cpus = {{ cpus|default(4) }};
+            const efficacite = metriques.speedup / Math.min(metriques.total_plans, cpus) * 100;
+            
+            let html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-info-circle"></i> Informations Générales</h6>
+                        <table class="table table-sm">
+                            <tr><td>Batch ID:</td><td><code>${metriques.batch_id}</code></td></tr>
+                            <tr>
+                                <td>Statut:</td>
+                                <td>
+                                    <span class="badge ${metriques.statut === 'termine' ? 'bg-success' : 'bg-warning'}">
+                                        ${metriques.statut || 'inconnu'}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr><td>Plans totaux:</td><td>${metriques.total_plans}</td></tr>
+                            <tr><td>Plans réussis:</td><td>${metriques.plans_reussis}</td></tr>
+                            <tr><td>Plans terminés:</td><td>${metriques.plans_termines}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-speedometer2"></i> Performance</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Speedup:</td>
+                                <td>
+                                    <span class="badge ${metriques.speedup >= 2.0 ? 'bg-success' : metriques.speedup >= 1.2 ? 'bg-warning' : 'bg-danger'}">
+                                        ${metriques.speedup ? metriques.speedup.toFixed(2) : '0.00'}x
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr><td>Temps séquentiel estimé:</td><td>${metriques.temps_sequentiel_estime || 0}s</td></tr>
+                            <tr><td>Temps réel:</td><td>${metriques.temps_total || 0}s</td></tr>
+                            <tr><td>Gain de temps:</td><td><strong class="text-success">${metriques.gain_temps || 0}s</strong></td></tr>
+                            <tr><td>Efficacité:</td><td>${efficacite.toFixed(1)}%</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6><i class="bi bi-clock"></i> Temps d'exécution</h6>
+                        <table class="table table-sm">
+                            <tr><td>Temps écoulé:</td><td>${metriques.temps_ecoule || 0}s</td></tr>
+                            <tr><td>Temps moyen/plan:</td><td>${metriques.temps_moyen_plan || 0}s</td></tr>
+                            <tr><td>Temps minimum:</td><td>${metriques.temps_min_plan || 0}s</td></tr>
+                            <tr><td>Temps maximum:</td><td>${metriques.temps_max_plan || 0}s</td></tr>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('contenu-details-batch').innerHTML = html;
+            
+            // Afficher la modale
+            const modalElement = document.getElementById('modalDetailsBatch');
+            if (modalElement && typeof bootstrap !== 'undefined') {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            }
+        } else {
+            afficherNotification('Erreur', data.erreur || 'Batch non trouvé', 'danger');
+        }
+    } catch (error) {
+        console.error('❌ Erreur récupération détails batch:', error);
+        afficherNotification('Erreur', 'Impossible de récupérer les détails du batch', 'danger');
+    }
+}
+
+// ==================== EXPORT GRAPHIQUE ====================
+function exporterGraphiqueBatch() {
+    if (!graphiqueBatchActuel) {
+        afficherNotification('Erreur', 'Aucun graphique à exporter', 'warning');
+        return;
+    }
+    
+    const canvas = document.getElementById('graphiqueBatchActuel');
+    if (!canvas) return;
+    
+    try {
+        const image = canvas.toDataURL('image/png');
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:]/g, '-');
+        const filename = `comparatif_batch_${batchCourantId || 'actuel'}_${timestamp}.png`;
+        
+        const link = document.createElement('a');
+        link.href = image;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        afficherNotification('Export réussi', 'Graphique exporté en PNG', 'success');
+    } catch (error) {
+        console.error('❌ Erreur export graphique:', error);
+        afficherNotification('Erreur', 'Impossible d\'exporter le graphique', 'danger');
+    }
+}
+
+// ==================== ACTUALISATION DES DONNÉES ====================
+async function actualiserHistorique() {
+    console.log('🔄 Actualisation historique batchs...');
+    
+    try {
+        const response = await fetch('/api/batchs/historique');
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success && data.batchs) {
+                const tbody = document.getElementById('historique-batchs-body');
+                if (!tbody) return;
+                
+                tbody.innerHTML = '';
+                
+                for (const [batchId, infos] of Object.entries(data.batchs)) {
+                    const row = document.createElement('tr');
+                    row.id = `batch-${batchId}`;
+                    
+                    let badgeClass = 'bg-danger';
+                    if (infos.speedup >= 2.0) badgeClass = 'bg-success';
+                    else if (infos.speedup >= 1.2) badgeClass = 'bg-warning';
+                    
+                    row.innerHTML = `
+                        <td><code>${batchId}</code></td>
+                        <td>
+                            <span class="badge bg-success">${infos.plans_reussis || 0}</span>
+                            /<span class="badge bg-secondary">${infos.total_plans || 0}</span>
+                        </td>
+                        <td>${infos.temps_total || 0}s</td>
+                        <td>
+                            <span class="badge ${badgeClass}">
+                                ${infos.speedup ? infos.speedup.toFixed(2) : '0.00'}x
+                            </span>
+                        </td>
+                        <td>${infos.temps_moyen_plan || 0}s</td>
+                        <td>
+                            <span class="badge bg-success">
+                                ${Math.round((infos.temps_sequentiel_estime || 0) - (infos.temps_total || 0))}s
+                            </span>
+                        </td>
+                        <td>${infos.date_debut || 'N/A'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="voirDetailsBatch('${batchId}')">
+                                <i class="bi bi-eye"></i> Détails
+                            </button>
+                        </td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                }
+                
+                // Mettre à jour le compteur
+                const badgeCount = document.getElementById('nombre-batchs-termines');
+                if (badgeCount) {
+                    badgeCount.textContent = Object.keys(data.batchs).length;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erreur actualisation historique:', error);
+    }
+}
+
+async function actualiserHistoriquePlans() {
+    console.log('🔄 Actualisation historique plans...');
+    
+    try {
+        // Recharger la page pour avoir les plans frais
+        // Une meilleure approche serait d'avoir un endpoint API spécifique
+        const response = await fetch('/dashboard');
+        if (response.ok) {
+            // On pourrait parser le HTML mais pour simplifier, on recharge la page
+            afficherNotification('Actualisation', 'Les plans ont été mis à jour', 'info');
+            
+            // Mettre à jour le compteur
+            const badgeCount = document.getElementById('nombre-plans');
+            if (badgeCount) {
+                // Incrémenter le compteur (approximation)
+                const current = parseInt(badgeCount.textContent) || 0;
+                badgeCount.textContent = current + 1;
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erreur actualisation plans:', error);
+    }
+}
+
+function actualiserCompteurPlansHistorique() {
+    const container = document.getElementById('conteneur-historique-plans');
+    if (!container) return;
+    
+    const nombrePlans = container.querySelectorAll('.col-md-6, .col-md-4, .col-lg-4').length;
+    const badge = document.getElementById('nombre-plans');
+    if (badge) {
+        badge.textContent = nombrePlans;
+    }
+}
+
+// ==================== INITIALISATION ====================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 Dashboard chargé');
+    
+    // Initialiser Socket.IO
+    initialiserSocket();
+    
+    // Définir les dates par défaut
+    function setDefaultDates() {
+        const aujourdhui = new Date();
+        
+        // Date de départ: +7 jours
+        const dateDepart = new Date(aujourdhui);
+        dateDepart.setDate(aujourdhui.getDate() + 7);
+        
+        // Date de retour: +14 jours
+        const dateRetour = new Date(dateDepart);
+        dateRetour.setDate(dateDepart.getDate() + 7);
+        
+        // Appliquer au premier formulaire
+        const premierFormulaire = document.querySelector('.formulaire-plan');
+        if (premierFormulaire) {
+            const champDepart = premierFormulaire.querySelector('.champ-date-depart');
+            const champRetour = premierFormulaire.querySelector('.champ-date-retour');
+            
+            if (champDepart) {
+                champDepart.value = dateDepart.toISOString().split('T')[0];
+                champDepart.min = aujourdhui.toISOString().split('T')[0];
+            }
+            
+            if (champRetour) {
+                champRetour.value = dateRetour.toISOString().split('T')[0];
+                if (champDepart) {
+                    champRetour.min = champDepart.value;
+                }
+            }
+        }
+        
+        // Ajouter des écouteurs pour la validation des dates
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('champ-date-depart')) {
+                const depart = e.target.value;
+                const formulaire = e.target.closest('.formulaire-plan');
+                const retour = formulaire.querySelector('.champ-date-retour');
+                if (retour) {
+                    retour.min = depart;
+                    if (retour.value < depart) {
+                        retour.value = depart;
+                    }
+                }
+            }
+        });
+    }
+    
+    setDefaultDates();
+    actualiserCompteurPlans();
+    
+    // Actualiser périodiquement les données
+    setInterval(actualiserHistorique, 60000); // Toutes les minutes
+    
+    // Vérifier la connexion Socket.IO périodiquement
+    setInterval(function() {
+        if (socket && !socket.connected) {
+            console.log('🔄 Tentative de reconnexion Socket.IO...');
+            socket.connect();
+        }
+    }, 30000);
+    
+    // Afficher un message de bienvenue
+    setTimeout(function() {
+        console.log('✅ Dashboard complètement initialisé');
+    }, 1000);
+});
+</script>
+
+<style>
+/* ==================== STYLES SPÉCIFIQUES ==================== */
+.progress {
+  height: 30px;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  transition: width 0.5s ease-in-out;
+}
+
+.formulaire-plan {
+  transition: all 0.3s ease;
+  border: 2px solid #dee2e6;
+}
+
+.formulaire-plan:hover {
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  transform: translateY(-2px);
+}
+
+.formulaire-plan.border-danger {
+  border-color: #dc3545 !important;
+  animation: pulse-danger 0.5s ease-in-out 3;
+}
+
+@keyframes pulse-danger {
+  0%, 100% { 
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+  50% { 
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+  }
+}
+
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: none;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.badge {
+  font-size: 0.85em;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.table th {
+  font-weight: 600;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+#graphiqueBatchActuel {
+  width: 100% !important;
+  max-height: 300px;
+  min-height: 250px;
+}
+
+#conteneur-notifications {
+  min-width: 320px;
+  max-width: 400px;
+  z-index: 9999;
+}
+
+.toast {
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn {
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .formulaire-plan .row > div {
+    margin-bottom: 10px;
+  }
+  
+  .formulaire-plan .col-md-1 {
+    margin-bottom: 0;
+  }
+  
+  #section-graphique-post-generation .row > div {
+    margin-bottom: 20px;
+  }
+  
+  #graphiqueBatchActuel {
+    max-height: 250px;
+    min-height: 200px;
+  }
+  
+  .card-title {
+    font-size: 1.1rem;
+  }
+  
+  .display-4 {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .container {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  
+  .card {
+    border-radius: 0.5rem;
+  }
+  
+  .btn-lg {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+/* Animation pour la barre de progression */
+.progress-bar-striped {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+}
+
+/* Style pour les cartes de plan */
+.card.shadow-sm {
+  border-left: 4px solid #0d6efd;
+}
+
+.card.shadow-sm.border-success {
+  border-left-color: #198754;
+}
+
+.card.shadow-sm.border-warning {
+  border-left-color: #ffc107;
+}
+
+.card.shadow-sm.border-danger {
+  border-left-color: #dc3545;
+}
+
+/* Style pour le modal */
+.modal-content {
+  border: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Style pour les tooltips */
+.tooltip {
+  font-size: 0.85rem;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Animation pour les nouvelles lignes de tableau */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#historique-batchs-body tr,
+#conteneur-historique-plans .col-md-6,
+#conteneur-historique-plans .col-md-4,
+#conteneur-historique-plans .col-lg-4 {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Style pour les champs de formulaire focus */
+.form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Style pour les badges dans les tableaux */
+.table .badge {
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Style pour les cartes de statistiques */
+.card.bg-success,
+.card.bg-primary,
+.card.bg-warning,
+.card.bg-secondary {
+  border: none;
+  overflow: hidden;
+}
+
+.card.bg-success::before,
+.card.bg-primary::before,
+.card.bg-warning::before,
+.card.bg-secondary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Style pour le conteneur principal */
+.container {
+  animation: fadeIn 0.5s ease-out;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,569 @@
+<!-- templates/plan/sections/weather.html -->
+<div class="card shadow-sm border-0 weather-section">
+    <div class="card-header bg-info text-white d-flex align-items-center justify-content-between py-3">
+        <div>
+            <h4 class="mb-0 fw-bold"><i class="fas fa-cloud-sun me-2"></i>Prévisions météorologiques</h4>
+            {% if contenu.weather and contenu.weather.period %}
+            <small class="opacity-90">
+                <i class="fas fa-calendar-alt me-1"></i>
+                Du {{ contenu.weather.period.from }} au {{ contenu.weather.period.to }}
+            </small>
+            {% endif %}
+        </div>
+        {% if contenu.weather and contenu.weather.city %}
+        <span class="badge bg-light text-dark px-3 py-2">
+            <i class="fas fa-map-marker-alt me-1 text-info"></i>{{ contenu.weather.city.name }}
+        </span>
+        {% endif %}
+    </div>
+    
+    <div class="card-body p-3">
+        {% if contenu.weather and (contenu.weather.forecast or contenu.weather.list) %}
+            {% set weather_data = contenu.weather.forecast if contenu.weather.forecast else contenu.weather.list %}
+            
+            <!-- Grouper les données par jour -->
+            {% set grouped_weather = {} %}
+            {% for forecast in weather_data %}
+                {% if forecast.dt %}
+                    {% set date_key = forecast.dt|datetimeformat("%Y-%m-%d") %}
+                    {% if date_key not in grouped_weather %}
+                        {% set _ = grouped_weather.update({date_key: []}) %}
+                    {% endif %}
+                    {% set _ = grouped_weather[date_key].append(forecast) %}
+                {% endif %}
+            {% endfor %}
+            
+            <!-- Onglets de navigation -->
+            <ul class="nav nav-tabs mb-3" id="weatherTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab">
+                        <i class="fas fa-calendar-day me-1"></i>Journalier
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="hourly-tab" data-bs-toggle="tab" data-bs-target="#hourly" type="button" role="tab">
+                        <i class="fas fa-clock me-1"></i>Horaire
+                    </button>
+                </li>
+            </ul>
+            
+            <!-- Contenu des onglets -->
+            <div class="tab-content" id="weatherTabContent">
+                <!-- Vue journalière -->
+                <div class="tab-pane fade show active" id="daily" role="tabpanel">
+                    <div class="row g-3">
+                        {% for date_key, day_forecasts in grouped_weather.items() %}
+                        {% if day_forecasts|length > 0 %}
+                        {% set first_forecast = day_forecasts[0] %}
+                        
+                        <!-- Calcul des températures -->
+                        {% set temps = [] %}
+                        {% for forecast in day_forecasts %}
+                            {% if forecast.main and forecast.main.temp is not none %}
+                                {% set _ = temps.append(forecast.main.temp) %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% set min_temp = temps|min if temps|length > 0 else 0 %}
+                        {% set max_temp = temps|max if temps|length > 0 else 0 %}
+                        {% set avg_temp = (temps|sum / temps|length)|round(1) if temps|length > 0 else 0 %}
+                        
+                        <!-- Conditions dominantes -->
+                        {% set weather_counts = {} %}
+                        {% for forecast in day_forecasts %}
+                            {% if forecast.weather and forecast.weather[0] and forecast.weather[0].main %}
+                                {% set weather_main = forecast.weather[0].main %}
+                                {% if weather_main not in weather_counts %}
+                                    {% set _ = weather_counts.update({weather_main: 0}) %}
+                                {% endif %}
+                                {% set _ = weather_counts.update({weather_main: weather_counts[weather_main] + 1}) %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% set dominant_weather = 'Clear' %}
+                        {% set max_count = 0 %}
+                        {% for weather_main, count in weather_counts.items() %}
+                            {% if count > max_count %}
+                                {% set dominant_weather = weather_main %}
+                                {% set max_count = count %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <!-- Icône dominante -->
+                        {% set dominant_icon = '01d' %}
+                        {% for forecast in day_forecasts %}
+                            {% if forecast.weather and forecast.weather[0] and forecast.weather[0].main == dominant_weather %}
+                                {% set dominant_icon = forecast.weather[0].icon %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if dominant_icon == '01d' and day_forecasts[0].weather and day_forecasts[0].weather[0] and day_forecasts[0].weather[0].icon %}
+                            {% set dominant_icon = day_forecasts[0].weather[0].icon %}
+                        {% endif %}
+                        
+                        <div class="col-xl-3 col-lg-4 col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light py-2">
+                                    <h6 class="mb-0 text-center fw-bold text-dark">
+                                        {{ first_forecast.dt|datetimeformat("%a %d/%m") }}
+                                    </h6>
+                                </div>
+                                <div class="card-body text-center p-3">
+                                    <!-- Icône météo -->
+                                    <div class="mb-2">
+                                        <img src="https://openweathermap.org/img/wn/{{ dominant_icon }}.png" 
+                                             alt="{{ dominant_weather }}"
+                                             class="weather-icon">
+                                    </div>
+                                    
+                                    <!-- Température -->
+                                    <div class="mb-3">
+                                        <div class="display-6 fw-bold text-dark">{{ avg_temp|round(0) }}°C</div>
+                                        <div class="small text-muted">
+                                            <span class="text-primary">{{ min_temp|round(0) }}°</span> / 
+                                            <span class="text-danger">{{ max_temp|round(0) }}°</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Conditions -->
+                                    {% if day_forecasts[0].weather and day_forecasts[0].weather[0] and day_forecasts[0].weather[0].description %}
+                                    <div class="mb-3">
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info">
+                                            {{ day_forecasts[0].weather[0].description|capitalize }}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Détails -->
+                                    <div class="row g-2 small text-muted">
+                                        {% set humidities = [] %}
+                                        {% set wind_speeds = [] %}
+                                        {% set precipitations = [] %}
+                                        
+                                        {% for forecast in day_forecasts %}
+                                            {% if forecast.main and forecast.main.humidity is not none %}
+                                                {% set _ = humidities.append(forecast.main.humidity) %}
+                                            {% endif %}
+                                            {% if forecast.wind and forecast.wind.speed is not none %}
+                                                {% set _ = wind_speeds.append(forecast.wind.speed) %}
+                                            {% endif %}
+                                            {% if forecast.get('pop') is not none %}
+                                                {% set pop_value = forecast.get('pop')|float %}
+                                                {% set _ = precipitations.append(pop_value * 100) %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% set avg_humidity = (humidities|sum / humidities|length)|round(0) if humidities|length > 0 else 0 %}
+                                        {% set max_wind = wind_speeds|max|round(1) if wind_speeds|length > 0 else 0 %}
+                                        {% set total_precip = (precipitations|sum / day_forecasts|length)|round(0) if day_forecasts|length > 0 else 0 %}
+                                        
+                                        <div class="col-6">
+                                            <div class="p-2 bg-light rounded">
+                                                <i class="fas fa-tint text-primary me-1"></i>
+                                                {{ avg_humidity }}%
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-2 bg-light rounded">
+                                                <i class="fas fa-wind text-info me-1"></i>
+                                                {{ max_wind }} m/s
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-2 bg-light rounded">
+                                                <i class="fas fa-cloud text-secondary me-1"></i>
+                                                {{ dominant_weather }}
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-2 bg-light rounded">
+                                                <i class="fas fa-umbrella text-success me-1"></i>
+                                                {{ total_precip }}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Bouton détails -->
+                                    <div class="mt-3">
+                                        <button class="btn btn-sm btn-outline-info w-100 hourly-details-btn" 
+                                                data-date="{{ date_key }}"
+                                                data-forecasts='{{ day_forecasts|tojson }}'>
+                                            <i class="fas fa-clock me-1"></i> Détails
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Vue horaire -->
+                <div class="tab-pane fade" id="hourly" role="tabpanel">
+                    <div class="timeline-container">
+                        <!-- Navigation entre les jours -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <button class="btn btn-sm btn-outline-secondary" id="prevDayHourly">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span class="fw-bold" id="currentDayLabel">Jour 1</span>
+                            <button class="btn btn-sm btn-outline-secondary" id="nextDayHourly">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Contenu horaire -->
+                        <div class="hourly-content">
+                            {% for date_key, day_forecasts in grouped_weather.items() %}
+                            <div class="hourly-day" data-day="{{ loop.index0 }}" 
+                                 {% if loop.index0 > 0 %}style="display: none;"{% endif %}>
+                                <div class="row g-2">
+                                    {% for forecast in day_forecasts %}
+                                    <div class="col-6 col-md-3 col-lg-2">
+                                        <div class="card border-0 shadow-sm mb-2">
+                                            <div class="card-body text-center p-2">
+                                                <div class="small fw-bold text-dark mb-1">
+                                                    {{ forecast.dt|datetimeformat("%H:%M") }}
+                                                </div>
+                                                
+                                                {% if forecast.weather and forecast.weather[0] %}
+                                                <img src="https://openweathermap.org/img/wn/{{ forecast.weather[0].icon }}.png" 
+                                                     alt="{{ forecast.weather[0].description }}"
+                                                     class="weather-icon-sm mb-1">
+                                                <div class="small text-muted mb-1">
+                                                    {{ forecast.weather[0].description|truncate(15) }}
+                                                </div>
+                                                {% endif %}
+                                                
+                                                <div class="fw-bold text-dark mb-1">
+                                                    {{ forecast.main.temp|round(0) if forecast.main.temp else 0 }}°C
+                                                </div>
+                                                
+                                                <div class="row g-1 small text-muted">
+                                                    <div class="col-6">
+                                                        <div>
+                                                            <i class="fas fa-wind"></i>
+                                                            {{ forecast.wind.speed|round(1) if forecast.wind.speed else 0 }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div>
+                                                            <i class="fas fa-tint"></i>
+                                                            {{ forecast.main.humidity if forecast.main.humidity else 0 }}%
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        {% else %}
+            <!-- État vide -->
+            <div class="text-center py-5">
+                <i class="fas fa-cloud-sun-rain fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted mb-2">Données météo non disponibles</h5>
+                <p class="text-muted mb-0">Les prévisions météorologiques ne sont pas disponibles pour cette destination.</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Statistiques résumées -->
+    {% if contenu.weather and grouped_weather %}
+    {% set stats = namespace(
+        avg_temp_all=0,
+        sunny_days=0,
+        rainy_days=0,
+        max_wind_all=0,
+        total_temps=[]
+    ) %}
+    
+    {% for date_key, day_forecasts in grouped_weather.items() %}
+        {% set day_temps = [] %}
+        {% set day_is_sunny = false %}
+        {% set day_is_rainy = false %}
+        {% set day_max_wind = 0 %}
+        
+        {% for forecast in day_forecasts %}
+            {% if forecast.main and forecast.main.temp is not none %}
+                {% set _ = stats.total_temps.append(forecast.main.temp) %}
+                {% set _ = day_temps.append(forecast.main.temp) %}
+            {% endif %}
+            {% if forecast.weather and forecast.weather[0] %}
+                {% if forecast.weather[0].main in ['Clear'] %}
+                    {% set day_is_sunny = true %}
+                {% endif %}
+                {% if forecast.weather[0].main in ['Rain', 'Drizzle', 'Thunderstorm'] %}
+                    {% set day_is_rainy = true %}
+                {% endif %}
+            {% endif %}
+            {% if forecast.wind and forecast.wind.speed is not none %}
+                {% if forecast.wind.speed > day_max_wind %}
+                    {% set day_max_wind = forecast.wind.speed %}
+                {% endif %}
+                {% if forecast.wind.speed > stats.max_wind_all %}
+                    {% set stats.max_wind_all = forecast.wind.speed %}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+        
+        {% if day_is_sunny %}
+            {% set stats.sunny_days = stats.sunny_days + 1 %}
+        {% endif %}
+        {% if day_is_rainy %}
+            {% set stats.rainy_days = stats.rainy_days + 1 %}
+        {% endif %}
+    {% endfor %}
+    
+    {% if stats.total_temps|length > 0 %}
+        {% set stats.avg_temp_all = (stats.total_temps|sum / stats.total_temps|length)|round(1) %}
+    {% endif %}
+    
+    <div class="card-footer bg-light py-3">
+        <div class="row text-center small">
+            <div class="col-md-3 col-6 border-end">
+                <div class="text-dark fw-bold">{{ stats.avg_temp_all }}°C</div>
+                <div class="text-muted">Temp. moyenne</div>
+            </div>
+            <div class="col-md-3 col-6 border-end">
+                <div class="text-dark fw-bold">{{ stats.sunny_days }}/{{ grouped_weather|length }}</div>
+                <div class="text-muted">Jours ensoleillés</div>
+            </div>
+            <div class="col-md-3 col-6 border-end">
+                <div class="text-dark fw-bold">{{ stats.rainy_days }}/{{ grouped_weather|length }}</div>
+                <div class="text-muted">Jours de pluie</div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="text-dark fw-bold">{{ stats.max_wind_all|round(1) }} m/s</div>
+                <div class="text-muted">Vent maximum</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal pour les détails horaires -->
+<div class="modal fade" id="hourlyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Détails météorologiques</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="hourlyModalBody">
+                <!-- Contenu généré dynamiquement -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.weather-section {
+    border-radius: 10px;
+}
+
+.weather-icon {
+    width: 60px;
+    height: 60px;
+}
+
+.weather-icon-sm {
+    width: 40px;
+    height: 40px;
+}
+
+.nav-tabs .nav-link {
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    padding: 8px 15px;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #17a2b8;
+    color: white;
+    border-color: #17a2b8;
+}
+
+.timeline-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.hourly-content .card {
+    transition: transform 0.2s;
+}
+
+.hourly-content .card:hover {
+    transform: translateY(-2px);
+}
+
+.bg-opacity-10 {
+    background-color: rgba(var(--bs-info-rgb), 0.1) !important;
+}
+
+/* Style responsive */
+@media (max-width: 768px) {
+    .weather-icon {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .display-6 {
+        font-size: 1.8rem;
+    }
+    
+    .card-body {
+        padding: 1rem !important;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables pour la navigation horaire
+    let currentHourlyDay = 0;
+    const hourlyDays = document.querySelectorAll('.hourly-day');
+    const totalHourlyDays = hourlyDays.length;
+    
+    // Navigation entre les jours (vue horaire)
+    const prevDayBtn = document.getElementById('prevDayHourly');
+    const nextDayBtn = document.getElementById('nextDayHourly');
+    const currentDayLabel = document.getElementById('currentDayLabel');
+    
+    function updateHourlyView() {
+        // Masquer tous les jours
+        hourlyDays.forEach(day => {
+            day.style.display = 'none';
+        });
+        
+        // Afficher le jour actuel
+        if (hourlyDays[currentHourlyDay]) {
+            hourlyDays[currentHourlyDay].style.display = 'block';
+        }
+        
+        // Mettre à jour le label
+        if (currentDayLabel) {
+            currentDayLabel.textContent = `Jour ${currentHourlyDay + 1}`;
+        }
+        
+        // Désactiver/activer les boutons
+        if (prevDayBtn) prevDayBtn.disabled = currentHourlyDay === 0;
+        if (nextDayBtn) nextDayBtn.disabled = currentHourlyDay === totalHourlyDays - 1;
+    }
+    
+    // Événements de navigation
+    if (prevDayBtn) {
+        prevDayBtn.addEventListener('click', function() {
+            if (currentHourlyDay > 0) {
+                currentHourlyDay--;
+                updateHourlyView();
+            }
+        });
+    }
+    
+    if (nextDayBtn) {
+        nextDayBtn.addEventListener('click', function() {
+            if (currentHourlyDay < totalHourlyDays - 1) {
+                currentHourlyDay++;
+                updateHourlyView();
+            }
+        });
+    }
+    
+    // Initialiser la vue horaire
+    updateHourlyView();
+    
+    // Gestion des boutons de détails
+    document.querySelectorAll('.hourly-details-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const dateKey = this.dataset.date;
+            const forecasts = JSON.parse(this.dataset.forecasts);
+            showHourlyDetails(dateKey, forecasts);
+        });
+    });
+    
+    // Fonction pour afficher les détails horaires dans un modal
+    function showHourlyDetails(dateKey, forecasts) {
+        const date = new Date(dateKey);
+        const formattedDate = date.toLocaleDateString('fr-FR', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        let content = `
+            <div class="hourly-details">
+                <h6 class="mb-3">${formattedDate}</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th>Heure</th>
+                                <th>Temp.</th>
+                                <th>Conditions</th>
+                                <th>Vent</th>
+                                <th>Humidité</th>
+                                <th>Pluie</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        
+        forecasts.forEach(forecast => {
+            const time = new Date(forecast.dt * 1000).toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const temp = forecast.main && forecast.main.temp ? forecast.main.temp.toFixed(1) : 'N/A';
+            const description = forecast.weather && forecast.weather[0] ? forecast.weather[0].description : '';
+            const icon = forecast.weather && forecast.weather[0] ? forecast.weather[0].icon : '01d';
+            const windSpeed = forecast.wind ? forecast.wind.speed.toFixed(1) : '0';
+            const humidity = forecast.main && forecast.main.humidity ? forecast.main.humidity : '0';
+            const pop = forecast.get ? forecast.get('pop') : (forecast.pop !== undefined ? forecast.pop : 0);
+            const rainProb = pop ? Math.round(pop * 100) : 0;
+            
+            content += `
+                <tr>
+                    <td><strong>${time}</strong></td>
+                    <td>${temp}°C</td>
+                    <td>
+                        <img src="https://openweathermap.org/img/wn/${icon}.png" 
+                             alt="${description}"
+                             style="width: 24px; height: 24px;">
+                        <span class="ms-1">${description}</span>
+                    </td>
+                    <td>${windSpeed} m/s</td>
+                    <td>${humidity}%</td>
+                    <td>${rainProb}%</td>
+                </tr>
+            `;
+        });
+        
+        content += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('hourlyModalBody').innerHTML = content;
+        
+        // Afficher le modal
+        const modal = new bootstrap.Modal(document.getElementById('hourlyModal'));
+        modal.show();
+    }
+});
+</script>
